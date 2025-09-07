@@ -1,6 +1,7 @@
 const links = [
   { id: "dashboard", label: "Dashboard" },
   { id: "orders", label: "Orders" },
+  { id: "camps", label: "Camps" }, // Add this line
   { id: "statistics", label: "Statistics" },
   { id: "control", label: "Control Panel" },
   { id: "account", label: "Account Settings" },
