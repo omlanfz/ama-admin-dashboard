@@ -39,21 +39,18 @@ export default function Orders() {
           <table className="min-w-full divide-y divide-gray-700">
             <thead className="bg-gray-800">
               <tr>
-                {/* New: Index Serial */}
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xl font-medium text-gray-400 uppercase tracking-wider"
                 >
                   #
                 </th>
-                {/* New: Unique Order ID */}
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
                 >
                   Order ID
                 </th>
-                {/* New: Camp Name */}
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
@@ -78,7 +75,6 @@ export default function Orders() {
                 >
                   Pickup
                 </th>
-                {/* New: Pickup Slot */}
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
@@ -96,22 +92,18 @@ export default function Orders() {
             <tbody className="bg-gray-900 divide-y divide-gray-700">
               {orders.map((order, index) => (
                 <tr key={order.id}>
-                  {/* New: Index Serial */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                     {index + 1}
                   </td>
-                  {/* New: Unique Order ID */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {order.id}
                   </td>
-                  {/* New: Camp Name */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {order.camp_name || "—"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                     {order.room_number}
                   </td>
-                  {/* Updated: Multiple Services */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {order.services && order.services.length > 0
                       ? order.services.map((service) => service.name).join(", ")
@@ -120,9 +112,9 @@ export default function Orders() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {order.pickup_method}
                   </td>
-                  {/* New: Pickup Slot */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                    {order.pickup_slot?.name || "—"}
+                    {/* Correctly accessing the pickup slot time */}
+                    {order.pickup_slot?.acf?.time || "—"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <span
@@ -186,6 +178,27 @@ export default function Orders() {
 //           <table className="min-w-full divide-y divide-gray-700">
 //             <thead className="bg-gray-800">
 //               <tr>
+//                 {/* New: Index Serial */}
+//                 <th
+//                   scope="col"
+//                   className="px-6 py-3 text-left text-xl font-medium text-gray-400 uppercase tracking-wider"
+//                 >
+//                   #
+//                 </th>
+//                 {/* New: Unique Order ID */}
+//                 <th
+//                   scope="col"
+//                   className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+//                 >
+//                   Order ID
+//                 </th>
+//                 {/* New: Camp Name */}
+//                 <th
+//                   scope="col"
+//                   className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+//                 >
+//                   Camp Name
+//                 </th>
 //                 <th
 //                   scope="col"
 //                   className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
@@ -204,6 +217,13 @@ export default function Orders() {
 //                 >
 //                   Pickup
 //                 </th>
+//                 {/* New: Pickup Slot */}
+//                 <th
+//                   scope="col"
+//                   className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+//                 >
+//                   Pickup Slot
+//                 </th>
 //                 <th
 //                   scope="col"
 //                   className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
@@ -213,16 +233,35 @@ export default function Orders() {
 //               </tr>
 //             </thead>
 //             <tbody className="bg-gray-900 divide-y divide-gray-700">
-//               {orders.map((order) => (
+//               {orders.map((order, index) => (
 //                 <tr key={order.id}>
+//                   {/* New: Index Serial */}
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
+//                     {index + 1}
+//                   </td>
+//                   {/* New: Unique Order ID */}
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {order.id}
+//                   </td>
+//                   {/* New: Camp Name */}
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {order.camp_name || "—"}
+//                   </td>
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
 //                     {order.room_number}
 //                   </td>
+//                   {/* Updated: Multiple Services */}
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                     {order.service?.name || "—"}
+//                     {order.services && order.services.length > 0
+//                       ? order.services.map((service) => service.name).join(", ")
+//                       : "—"}
 //                   </td>
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
 //                     {order.pickup_method}
+//                   </td>
+//                   {/* New: Pickup Slot */}
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+//                     {order.pickup_slot?.name || "—"}
 //                   </td>
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
 //                     <span
