@@ -2,7 +2,7 @@ import amaLogo from "../assets/ama_logo.png";
 
 export default function Header() {
   return (
-    <header>
+    <header className="flex flex-col items-center">
       <div className="w-28 h-28 mx-auto rounded-3xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
         <img
           src={amaLogo}

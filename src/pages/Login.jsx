@@ -24,7 +24,7 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div className="text-center space-y-6">
+    <div className="flex flex-col items-center space-y-16 gap-6">
       <div className="w-40 h-40 mx-auto rounded-3xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
         <img
           src={amaLogo}
