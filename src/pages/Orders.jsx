@@ -31,97 +31,44 @@ export default function Orders() {
       ) : error ? (
         <p className="text-red-500">Error loading orders. Please try again.</p>
       ) : orders.length === 0 ? (
-        <p className="text-gray-500">
-          No orders found. Waiting for first booking.
-        </p>
+        <p>No orders found. Waiting for first booking.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-700">
-            <thead className="bg-gray-800">
+        <div className="orders-table-container">
+          <table>
+            <thead>
               <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xl font-medium text-gray-400 uppercase tracking-wider"
-                >
-                  #
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                >
-                  Order ID
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                >
-                  Camp Name
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                >
-                  Room
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                >
-                  Service
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                >
-                  Pickup
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                >
-                  Pickup Slot
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                >
-                  Payment Status
-                </th>
+                <th>#</th>
+                <th>Order ID</th>
+                <th>Camp Name</th>
+                <th>Room</th>
+                <th>Service</th>
+                <th>Pickup</th>
+                <th>Pickup Slot</th>
+                <th>Payment Status</th>
               </tr>
             </thead>
-            <tbody className="bg-gray-900 divide-y divide-gray-700">
+            <tbody>
               {orders.map((order, index) => (
                 <tr key={order.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
-                    {index + 1}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                    {order.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                    {order.camp_name || "—"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
-                    {order.room_number}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <td data-label="#">{index + 1}</td>
+                  <td data-label="Order ID">{order.id}</td>
+                  <td data-label="Camp Name">{order.camp_name || "—"}</td>
+                  <td data-label="Room">{order.room_number}</td>
+                  <td data-label="Service">
                     {order.services && order.services.length > 0
                       ? order.services.map((service) => service.name).join(", ")
                       : "—"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                    {order.pickup_method}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                    {/* Correctly accessing the pickup slot time */}
+                  <td data-label="Pickup">{order.pickup_method}</td>
+                  <td data-label="Pickup Slot">
                     {order.pickup_slot?.acf?.time || "—"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td data-label="Payment Status">
                     <span
-                      className={`inline-flex px-2 text-xs font-semibold leading-5 rounded-full ${
+                      className={`status ${
                         order.payment_confirmed
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
+                          ? "status-confirmed"
+                          : "status-unconfirmed"
                       }`}
                     >
                       {order.payment_confirmed ? "Confirmed" : "Unconfirmed"}
@@ -178,21 +125,18 @@ export default function Orders() {
 //           <table className="min-w-full divide-y divide-gray-700">
 //             <thead className="bg-gray-800">
 //               <tr>
-//                 {/* New: Index Serial */}
 //                 <th
 //                   scope="col"
 //                   className="px-6 py-3 text-left text-xl font-medium text-gray-400 uppercase tracking-wider"
 //                 >
 //                   #
 //                 </th>
-//                 {/* New: Unique Order ID */}
 //                 <th
 //                   scope="col"
 //                   className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
 //                 >
 //                   Order ID
 //                 </th>
-//                 {/* New: Camp Name */}
 //                 <th
 //                   scope="col"
 //                   className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
@@ -217,7 +161,6 @@ export default function Orders() {
 //                 >
 //                   Pickup
 //                 </th>
-//                 {/* New: Pickup Slot */}
 //                 <th
 //                   scope="col"
 //                   className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
@@ -235,22 +178,18 @@ export default function Orders() {
 //             <tbody className="bg-gray-900 divide-y divide-gray-700">
 //               {orders.map((order, index) => (
 //                 <tr key={order.id}>
-//                   {/* New: Index Serial */}
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
 //                     {index + 1}
 //                   </td>
-//                   {/* New: Unique Order ID */}
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
 //                     {order.id}
 //                   </td>
-//                   {/* New: Camp Name */}
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
 //                     {order.camp_name || "—"}
 //                   </td>
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
 //                     {order.room_number}
 //                   </td>
-//                   {/* Updated: Multiple Services */}
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
 //                     {order.services && order.services.length > 0
 //                       ? order.services.map((service) => service.name).join(", ")
@@ -259,9 +198,9 @@ export default function Orders() {
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
 //                     {order.pickup_method}
 //                   </td>
-//                   {/* New: Pickup Slot */}
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-//                     {order.pickup_slot?.name || "—"}
+//                     {/* Correctly accessing the pickup slot time */}
+//                     {order.pickup_slot?.acf?.time || "—"}
 //                   </td>
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
 //                     <span

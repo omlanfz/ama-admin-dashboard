@@ -389,3 +389,78 @@ button:hover {
 .gap-16 {
   gap: 16px;
 }
+
+
+
+/* === Orders Table Responsive Styles === */
+.orders-table-container {
+  overflow-x: auto;
+}
+
+.orders-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.orders-table-container th,
+.orders-table-container td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .orders-table-container thead {
+    display: none;
+  }
+
+  .orders-table-container tr {
+    display: block;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .orders-table-container td {
+    display: block;
+    text-align: right;
+    padding-left: 50%;
+    position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .orders-table-container td:last-child {
+    border-bottom: 0;
+  }
+
+  .orders-table-container td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* === Status Pill Styles === */
+.status {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  backdrop-filter: blur(4px);
+}
+
+.status-confirmed {
+  background: rgba(4, 120, 87, 0.5); /* Greenish */
+  color: #a7f3d0;
+}
+
+.status-unconfirmed {
+  background: rgba(251, 191, 36, 0.5); /* Yellowish */
+  color: #fef08a;
+}
