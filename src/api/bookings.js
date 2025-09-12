@@ -9,7 +9,6 @@ function getToken() {
 }
 
 export async function fetchService(id) {
-  // Added a check to prevent fetching if the ID is invalid
   if (!id) {
     console.error("fetchService called with invalid ID:", id);
     return null;
@@ -30,7 +29,6 @@ export async function fetchService(id) {
 }
 
 export async function fetchPickupSlot(id) {
-  // Added a check to prevent fetching if the ID is invalid
   if (!id) {
     console.error("fetchPickupSlot called with invalid ID:", id);
     return null;
@@ -80,9 +78,6 @@ export async function fetchLaundryOrders() {
       orders.map(async (order) => {
         const acf = order.acf || {};
 
-        // ✅ FIX: Handle multiple service IDs. Assumes service_id is an array of IDs.
-        // The original code was treating each item in the array as an object (service.ID),
-        // but the API returns an array of numbers.
         const serviceIds = Array.isArray(acf.service_id)
           ? acf.service_id
           : [acf.service_id].filter(Boolean);
@@ -97,20 +92,18 @@ export async function fetchLaundryOrders() {
           price: service.acf?.price || "",
         }));
 
-        // ✅ FIX: Handle single pickup slot ID. Assumes slot_id is a single ID.
-        // The original code was trying to access acf.slot_id.ID, which caused the error.
-        // Now it correctly uses the ID directly from acf.slot_id.
         const slot = acf.slot_id ? await fetchPickupSlot(acf.slot_id) : null;
 
         return {
+          // ✅ FIX: Spread all original acf fields into the final object
+          ...acf, 
+          
           id: order.id,
           title: order.title?.rendered || "",
-          room_number: acf.room_number || "",
-          camp_name: acf.camp_name || "",
-          pickup_method: acf.pickup_method || "",
-          payment_confirmed: acf.payment_confirmed || false,
-          services: services, // Return an array of service objects
-          pickup_slot: slot, // Return the full slot object
+          
+          // Overwrite original IDs with full objects
+          services: services, 
+          pickup_slot: slot, 
         };
       })
     );
@@ -121,6 +114,7 @@ export async function fetchLaundryOrders() {
     return [];
   }
 }
+
 
 
 
@@ -135,6 +129,11 @@ export async function fetchLaundryOrders() {
 // }
 
 // export async function fetchService(id) {
+//   // Added a check to prevent fetching if the ID is invalid
+//   if (!id) {
+//     console.error("fetchService called with invalid ID:", id);
+//     return null;
+//   }
 //   try {
 //     const res = await fetch(`${API_BASE}/service/${id}`, {
 //       headers: { Authorization: `Bearer ${getToken()}` },
@@ -151,6 +150,11 @@ export async function fetchLaundryOrders() {
 // }
 
 // export async function fetchPickupSlot(id) {
+//   // Added a check to prevent fetching if the ID is invalid
+//   if (!id) {
+//     console.error("fetchPickupSlot called with invalid ID:", id);
+//     return null;
+//   }
 //   try {
 //     const res = await fetch(`${API_BASE}/pickup_slot/${id}`, {
 //       headers: { Authorization: `Bearer ${getToken()}` },
@@ -196,13 +200,15 @@ export async function fetchLaundryOrders() {
 //       orders.map(async (order) => {
 //         const acf = order.acf || {};
 
-//         // Handle multiple services. Assumes service_id is an array of Post Objects.
-//         const serviceObjects = Array.isArray(acf.service_id)
+//         // ✅ FIX: Handle multiple service IDs. Assumes service_id is an array of IDs.
+//         // The original code was treating each item in the array as an object (service.ID),
+//         // but the API returns an array of numbers.
+//         const serviceIds = Array.isArray(acf.service_id)
 //           ? acf.service_id
 //           : [acf.service_id].filter(Boolean);
 
 //         const fetchedServices = await Promise.all(
-//           serviceObjects.map((serviceObj) => fetchService(serviceObj.ID))
+//           serviceIds.map((id) => fetchService(id))
 //         );
 //         const services = fetchedServices.filter(Boolean).map((service) => ({
 //           id: service.id,
@@ -211,8 +217,10 @@ export async function fetchLaundryOrders() {
 //           price: service.acf?.price || "",
 //         }));
 
-//         // Handle single pickup slot. Assumes slot_id is a single Post Object.
-//         const slot = acf.slot_id ? await fetchPickupSlot(acf.slot_id.ID) : null;
+//         // ✅ FIX: Handle single pickup slot ID. Assumes slot_id is a single ID.
+//         // The original code was trying to access acf.slot_id.ID, which caused the error.
+//         // Now it correctly uses the ID directly from acf.slot_id.
+//         const slot = acf.slot_id ? await fetchPickupSlot(acf.slot_id) : null;
 
 //         return {
 //           id: order.id,
@@ -221,7 +229,6 @@ export async function fetchLaundryOrders() {
 //           camp_name: acf.camp_name || "",
 //           pickup_method: acf.pickup_method || "",
 //           payment_confirmed: acf.payment_confirmed || false,
-
 //           services: services, // Return an array of service objects
 //           pickup_slot: slot, // Return the full slot object
 //         };
@@ -234,4 +241,5 @@ export async function fetchLaundryOrders() {
 //     return [];
 //   }
 // }
+
 
