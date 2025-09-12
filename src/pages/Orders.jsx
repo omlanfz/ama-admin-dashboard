@@ -58,7 +58,7 @@ export default function Orders() {
                   <td data-label="Order ID">{order.id}</td>
                   <td data-label="Customer Name">{order.customer_name || "—"}</td>
                   {/* ✅ FIX: Display camp_name from ACF */}
-                  <td data-label="Camp Name">{order.camp_name || "—"}</td>
+                  <td data-label="Camp Name">{order.acf.camp_name || "—"}</td>
                   <td data-label="Room">{order.room_number}</td>
                   <td data-label="Service">
                     {/* ✅ FIX: Improved service rendering */}
