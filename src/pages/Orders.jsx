@@ -82,7 +82,7 @@ export default function Orders() {
                   </td>
                   {/* ✅ FIX: Add Special Instructions column */}
                   <td data-label="Instructions" style={{ whiteSpace: 'normal' }}>
-                    {order.special_instructions || "—"}
+                    {order.Special_Instructions || "—"}
                   </td>
                   <td data-label="Payment Status">
                     <span
