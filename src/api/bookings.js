@@ -50,6 +50,27 @@ export async function fetchPickupSlot(id) {
   }
 }
 
+async function fetchCamp(id) {
+  if (!id) {
+    console.error("fetchCamp called with invalid ID:", id);
+    return null;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/camp/${id}`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    if (!res.ok) {
+      console.error(`Failed to fetch camp with ID ${id}: ${res.statusText}`);
+      return null;
+    }
+    const campData = await res.json();
+    return campData.title?.rendered || "Unknown Camp";
+  } catch (err) {
+    console.error(`Failed to fetch camp with ID ${id}:`, err);
+    return null;
+  }
+}
+
 export async function fetchLaundryOrders() {
   const token = getToken();
   if (!token) return [];
@@ -93,17 +114,27 @@ export async function fetchLaundryOrders() {
         }));
 
         const slot = acf.slot_id ? await fetchPickupSlot(acf.slot_id) : null;
+        
+        // Fetch the camp name using the new helper function
+        const campName = acf.camp_name ? await fetchCamp(acf.camp_name) : "—";
 
+        // Explicitly build the final order object to ensure all fields are included
         return {
-          // ✅ FIX: Spread all original acf fields into the final object
-          ...acf, 
-          
           id: order.id,
           title: order.title?.rendered || "",
           
-          // Overwrite original IDs with full objects
-          services: services, 
-          pickup_slot: slot, 
+          // Fields from ACF
+          customer_name: acf.customer_name || "—",
+          room_number: acf.room_number || "—",
+          pickup_method: acf.pickup_method || "—",
+          payment_confirmed: acf.payment_confirmed || false,
+          total_price: acf.total_price || "0.00",
+          special_instructions: acf.special_instructions || "—",
+
+          // Enriched/Resolved fields
+          camp_name: campName, // Use the fetched name instead of the ID
+          services: services,
+          pickup_slot: slot,
         };
       })
     );
@@ -114,7 +145,6 @@ export async function fetchLaundryOrders() {
     return [];
   }
 }
-
 
 
 
@@ -129,7 +159,6 @@ export async function fetchLaundryOrders() {
 // }
 
 // export async function fetchService(id) {
-//   // Added a check to prevent fetching if the ID is invalid
 //   if (!id) {
 //     console.error("fetchService called with invalid ID:", id);
 //     return null;
@@ -150,7 +179,6 @@ export async function fetchLaundryOrders() {
 // }
 
 // export async function fetchPickupSlot(id) {
-//   // Added a check to prevent fetching if the ID is invalid
 //   if (!id) {
 //     console.error("fetchPickupSlot called with invalid ID:", id);
 //     return null;
@@ -200,9 +228,6 @@ export async function fetchLaundryOrders() {
 //       orders.map(async (order) => {
 //         const acf = order.acf || {};
 
-//         // ✅ FIX: Handle multiple service IDs. Assumes service_id is an array of IDs.
-//         // The original code was treating each item in the array as an object (service.ID),
-//         // but the API returns an array of numbers.
 //         const serviceIds = Array.isArray(acf.service_id)
 //           ? acf.service_id
 //           : [acf.service_id].filter(Boolean);
@@ -217,20 +242,18 @@ export async function fetchLaundryOrders() {
 //           price: service.acf?.price || "",
 //         }));
 
-//         // ✅ FIX: Handle single pickup slot ID. Assumes slot_id is a single ID.
-//         // The original code was trying to access acf.slot_id.ID, which caused the error.
-//         // Now it correctly uses the ID directly from acf.slot_id.
 //         const slot = acf.slot_id ? await fetchPickupSlot(acf.slot_id) : null;
 
 //         return {
+//           // ✅ FIX: Spread all original acf fields into the final object
+//           ...acf, 
+          
 //           id: order.id,
 //           title: order.title?.rendered || "",
-//           room_number: acf.room_number || "",
-//           camp_name: acf.camp_name || "",
-//           pickup_method: acf.pickup_method || "",
-//           payment_confirmed: acf.payment_confirmed || false,
-//           services: services, // Return an array of service objects
-//           pickup_slot: slot, // Return the full slot object
+          
+//           // Overwrite original IDs with full objects
+//           services: services, 
+//           pickup_slot: slot, 
 //         };
 //       })
 //     );
