@@ -43,6 +43,8 @@ export default function Orders() {
                 <th>Camp Name</th>
                 <th>Room</th>
                 <th>Service</th>
+                {/* ✅ NEW: Added Total Price column */}
+                <th>Total Price</th>
                 <th>Pickup</th>
                 <th>Pickup Slot</th>
                 <th>Instructions</th>
@@ -54,21 +56,34 @@ export default function Orders() {
                 <tr key={order.id}>
                   <td data-label="#">{index + 1}</td>
                   <td data-label="Order ID">{order.id}</td>
-                  {/* ✅ FIX: Add Customer Name column */}
                   <td data-label="Customer Name">{order.customer_name || "—"}</td>
+                  {/* ✅ FIX: Display camp_name from ACF */}
                   <td data-label="Camp Name">{order.camp_name || "—"}</td>
                   <td data-label="Room">{order.room_number}</td>
                   <td data-label="Service">
-                    {order.services && order.services.length > 0
-                      ? order.services.map((service) => service.name).join(", ")
-                      : "—"}
+                    {/* ✅ FIX: Improved service rendering */}
+                    {order.services && order.services.length > 0 ? (
+                      <ul className="list-none p-0 m-0">
+                        {order.services.map((service) => (
+                          <li key={service.id}>{service.name}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  {/* ✅ NEW: Displaying the total price */}
+                  <td data-label="Total Price" className="font-semibold">
+                    ${parseFloat(order.total_price || 0).toFixed(2)} AUD
                   </td>
                   <td data-label="Pickup">{order.pickup_method}</td>
                   <td data-label="Pickup Slot">
                     {order.pickup_slot?.acf?.time || "—"}
                   </td>
-                   {/* ✅ FIX: Add Special Instructions column */}
-                  <td data-label="Instructions">{order.special_instructions || "—"}</td>
+                  {/* ✅ FIX: Add Special Instructions column */}
+                  <td data-label="Instructions" style={{ whiteSpace: 'normal' }}>
+                    {order.special_instructions || "—"}
+                  </td>
                   <td data-label="Payment Status">
                     <span
                       className={`status ${
@@ -89,7 +104,6 @@ export default function Orders() {
     </Card>
   );
 }
-
 
 
 // import { useEffect, useState } from "react";
@@ -133,11 +147,13 @@ export default function Orders() {
 //               <tr>
 //                 <th>#</th>
 //                 <th>Order ID</th>
+//                 <th>Customer Name</th>
 //                 <th>Camp Name</th>
 //                 <th>Room</th>
 //                 <th>Service</th>
 //                 <th>Pickup</th>
 //                 <th>Pickup Slot</th>
+//                 <th>Instructions</th>
 //                 <th>Payment Status</th>
 //               </tr>
 //             </thead>
@@ -146,6 +162,8 @@ export default function Orders() {
 //                 <tr key={order.id}>
 //                   <td data-label="#">{index + 1}</td>
 //                   <td data-label="Order ID">{order.id}</td>
+//                   {/* ✅ FIX: Add Customer Name column */}
+//                   <td data-label="Customer Name">{order.customer_name || "—"}</td>
 //                   <td data-label="Camp Name">{order.camp_name || "—"}</td>
 //                   <td data-label="Room">{order.room_number}</td>
 //                   <td data-label="Service">
@@ -157,6 +175,8 @@ export default function Orders() {
 //                   <td data-label="Pickup Slot">
 //                     {order.pickup_slot?.acf?.time || "—"}
 //                   </td>
+//                    {/* ✅ FIX: Add Special Instructions column */}
+//                   <td data-label="Instructions">{order.special_instructions || "—"}</td>
 //                   <td data-label="Payment Status">
 //                     <span
 //                       className={`status ${
@@ -177,3 +197,5 @@ export default function Orders() {
 //     </Card>
 //   );
 // }
+
+
