@@ -1,126 +1,392 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
-// --- DATA ARRAYS ---
-const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString());
+// --- Data Arrays ---
+const hours = Array.from({ length: 12 }, (_, i) =>
+  (i + 1).toString().padStart(2, "0")
+);
 const minutes = Array.from({ length: 60 }, (_, i) =>
   i.toString().padStart(2, "0")
 );
 const periods = ["AM", "PM"];
 
-// --- HELPER HOOKS ---
-
-/**
- * Custom hook to handle the infinite scroll illusion.
- * It listens for scroll events and silently jumps the scroll position
- * when the user reaches the padded buffer zones at the top or bottom.
- */
-const useInfiniteScroll = (ref, items) => {
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    let scrollTimeout;
-    const handleScroll = () => {
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        const itemHeight = element.scrollHeight / element.children.length;
-        const bufferSize = 2; // We have 2 items as padding top and bottom
-        const bufferHeight = bufferSize * itemHeight;
-        const contentHeight = items.length * itemHeight;
-
-        if (element.scrollTop < bufferHeight) {
-          element.scrollTop = contentHeight + element.scrollTop;
-        } else if (element.scrollTop >= bufferHeight + contentHeight) {
-          element.scrollTop = element.scrollTop - contentHeight;
-        }
-      }, 150); // Debounce to run only after scrolling stops
-    };
-
-    element.addEventListener("scroll", handleScroll, { passive: true });
-    return () => element.removeEventListener("scroll", handleScroll);
-  }, [ref, items]);
+// --- Helper: Get Item Height ---
+const getItemHeight = (ref) => {
+  return ref.current?.firstElementChild?.clientHeight || 36;
 };
 
-/**
- * Custom hook to detect the centered item using IntersectionObserver.
- * This is the most reliable way to set the state.
- */
-const useSnapScroll = (scrollRef, setter) => {
-  useEffect(() => {
-    const scrollElement = scrollRef.current;
-    if (!scrollElement) return;
+// --- CSS Styles Component ---
+const ComponentStyles = () => {
+  const css = `
+    .tp-beautified-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      opacity: 0;
+      animation: fadeIn 0.3s forwards;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      padding: 16px;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    const observerCallback = (entries) => {
-      const intersectingEntry = entries.find((e) => e.isIntersecting);
-      if (intersectingEntry) {
-        const value = intersectingEntry.target.dataset.value;
-        if (value) setter(value);
+    .tp-beautified-container {
+      width: 100%;
+      max-width: 600px;
+      background: linear-gradient(145deg, rgba(35, 37, 49, 0.95), rgba(25, 27, 36, 0.95));
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      color: #fff;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.95);
+      animation: popIn 0.3s forwards cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .tp-beautified-header {
+      padding: 20px;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .tp-beautified-body {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 252px;
+      padding: 0 16px;
+      gap: 16px;
+    }
+    
+    .tp-beautified-highlight {
+      position: absolute;
+      top: 50%;
+      left: 16px;
+      /* Calculate width to cover only hour and minute columns plus the colon */
+      width: calc(75% - 10px);
+      height: 36px;
+      transform: translateY(-50%);
+      background: linear-gradient(90deg, 
+        rgba(88, 86, 214, 0.15) 0%, 
+        rgba(88, 86, 214, 0.2) 30%, 
+        rgba(88, 86, 214, 0.25) 50%, 
+        rgba(88, 86, 214, 0.2) 70%, 
+        rgba(88, 86, 214, 0.15) 100%);
+      border-radius: 12px;
+      pointer-events: none;
+      border: 1px solid rgba(88, 86, 214, 0.3);
+      backdrop-filter: blur(4px);
+    }
+    
+    .tp-beautified-column {
+      height: 100%;
+      flex: 1;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      position: relative;
+      z-index: 2;
+    }
+    .tp-beautified-column::-webkit-scrollbar { display: none; }
+    .tp-beautified-column { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .tp-beautified-period-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      height: 100%;
+      padding: 0 16px;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .tp-beautified-period-option {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      min-width: 80px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+    
+    .tp-beautified-period-option:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .tp-beautified-period-option.is-selected {
+      background: linear-gradient(145deg, #5856d6, #6b69e6);
+      color: #fff;
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(88, 86, 214, 0.4);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .tp-beautified-item {
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: rgba(255, 255, 255, 0.5);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      scroll-snap-align: center;
+      position: relative;
+    }
+    
+    .tp-beautified-item:hover {
+      color: rgba(255, 255, 255, 0.8);
+      transform: scale(1.05);
+    }
+    
+    .tp-beautified-item.is-selected {
+      color: #fff;
+      font-weight: 600;
+      transform: scale(1.15);
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    }
+    
+    .tp-beautified-colon {
+      font-size: 24px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      position: relative;
+      z-index: 2;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+    
+    .tp-beautified-footer {
+      display: flex;
+      gap: 12px;
+      padding: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: rgba(0,0,0,0.1);
+      backdrop-filter: blur(10px);
+    }
+    
+    .tp-beautified-btn {
+      flex: 1;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(8px);
+    }
+    
+    .tp-beautified-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .tp-beautified-btn:active { transform: scale(0.98); }
+    
+    .tp-beautified-btn.cancel {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    
+    .tp-beautified-btn.cancel:hover { 
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+    }
+    
+    .tp-beautified-btn.confirm {
+      background: linear-gradient(145deg, #5856d6, #6b69e6);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .tp-beautified-btn.confirm:hover { 
+      background: linear-gradient(145deg, #6b69e6, #7c7af6);
+      box-shadow: 0 4px 20px rgba(88, 86, 214, 0.4);
+    }
+
+    /* Responsive styles */
+    @media (max-width: 640px) {
+      .tp-beautified-overlay {
+        padding: 12px;
+        align-items: flex-end;
       }
-    };
-    const observer = new IntersectionObserver(observerCallback, {
-      root: scrollElement,
-      rootMargin: "-50% 0px -50% 0px",
-    });
+      
+      .tp-beautified-container {
+        max-width: 100%;
+        border-radius: 24px 24px 0 0;
+        margin-bottom: 0;
+      }
+      
+      .tp-beautified-body {
+        height: 200px;
+        gap: 12px;
+        padding: 0 12px;
+      }
+      
+      .tp-beautified-highlight {
+        left: 12px;
+        width: calc(70% - 10px);
+        height: 32px;
+      }
+      
+      .tp-beautified-item {
+        height: 32px;
+        font-size: 20px;
+      }
+      
+      .tp-beautified-period-option {
+        padding: 10px 16px;
+        font-size: 16px;
+        min-width: 70px;
+      }
+      
+      .tp-beautified-colon {
+        font-size: 20px;
+      }
+      
+      .tp-beautified-header {
+        padding: 16px;
+        font-size: 16px;
+      }
+      
+      .tp-beautified-footer {
+        padding: 12px;
+      }
+      
+      .tp-beautified-btn {
+        padding: 14px;
+        font-size: 14px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .tp-beautified-body {
+        height: 180px;
+        gap: 8px;
+        padding: 0 8px;
+      }
+      
+      .tp-beautified-highlight {
+        left: 8px;
+        width: calc(65% - 10px);
+        height: 30px;
+      }
+      
+      .tp-beautified-item {
+        height: 30px;
+        font-size: 18px;
+      }
+      
+      .tp-beautified-period-option {
+        padding: 8px 12px;
+        font-size: 14px;
+        min-width: 60px;
+      }
+      
+      .tp-beautified-colon {
+        font-size: 18px;
+      }
+      
+      .tp-beautified-period-container {
+        padding: 0 8px;
+      }
+    }
+    
+    @media (max-width: 360px) {
+      .tp-beautified-body {
+        height: 160px;
+        gap: 6px;
+      }
+      
+      .tp-beautified-item {
+        height: 28px;
+        font-size: 16px;
+      }
+      
+      .tp-beautified-period-option {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-width: 50px;
+      }
+      
+      .tp-beautified-colon {
+        font-size: 16px;
+      }
+    }
 
-    Array.from(scrollElement.children).forEach((child) =>
-      observer.observe(child)
-    );
-    return () => observer.disconnect();
-  }, [scrollRef, setter]);
+    /* For very small heights (landscape mode) */
+    @media (max-height: 500px) {
+      .tp-beautified-overlay {
+        align-items: center;
+        padding: 8px;
+      }
+      
+      .tp-beautified-container {
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      
+      .tp-beautified-body {
+        height: 160px;
+      }
+    }
+  `;
+  useEffect(() => {
+    const styleElement = document.createElement("style");
+    styleElement.innerHTML = css;
+    document.head.appendChild(styleElement);
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, [css]);
+  return null;
 };
 
-// --- MAIN COMPONENT ---
+// --- Main Component ---
 const TimePicker = ({ isOpen, onClose, onConfirm, initialTime }) => {
-  const [selectedHour, setSelectedHour] = useState("9");
+  const [selectedHour, setSelectedHour] = useState("09");
   const [selectedMinute, setSelectedMinute] = useState("00");
   const [selectedPeriod, setSelectedPeriod] = useState("AM");
 
-  const prevHourRef = useRef(selectedHour);
   const hourRef = useRef(null);
   const minuteRef = useRef(null);
-  const periodRef = useRef(null);
 
-  // Create padded arrays for the infinite scroll effect
-  const paddedHours = [...hours.slice(-2), ...hours, ...hours.slice(0, 2)];
-  const paddedMinutes = [
-    ...minutes.slice(-2),
-    ...minutes,
-    ...minutes.slice(0, 2),
-  ];
+  const scrollTimeout = useRef(null);
+  const isInitialSetup = useRef(true);
 
-  // Apply all the logic hooks
-  useSnapScroll(hourRef, setSelectedHour);
-  useSnapScroll(minuteRef, setSelectedMinute);
-  useSnapScroll(periodRef, setSelectedPeriod);
-  useInfiniteScroll(hourRef, hours);
-  useInfiniteScroll(minuteRef, minutes);
+  const infiniteHours = [...hours, ...hours, ...hours];
+  const infiniteMinutes = [...minutes, ...minutes, ...minutes];
 
-  // Effect to automatically toggle AM/PM when scrolling past 12
-  useEffect(() => {
-    const prevHour = parseInt(prevHourRef.current, 10);
-    const currentHour = parseInt(selectedHour, 10);
-    if (
-      (prevHour === 11 && currentHour === 12) ||
-      (prevHour === 12 && currentHour === 11)
-    ) {
-      setSelectedPeriod((p) => (p === "AM" ? "PM" : "AM"));
-    }
-    prevHourRef.current = selectedHour;
-  }, [selectedHour]);
-
-  // Effect to set initial scroll positions
   useEffect(() => {
     if (isOpen) {
-      let initialH = "9",
+      isInitialSetup.current = true;
+      let initialH = "09",
         initialM = "00",
         initialP = "AM";
+
       if (initialTime) {
         const [time, period] = initialTime.split(" ");
-        const [h, m] = time.split(":");
-        initialH = parseInt(h, 10).toString();
-        initialM = m;
-        initialP = period;
+        [initialH, initialM] = time.split(":");
+        initialP = period.toUpperCase();
       }
 
       setSelectedHour(initialH);
@@ -128,101 +394,150 @@ const TimePicker = ({ isOpen, onClose, onConfirm, initialTime }) => {
       setSelectedPeriod(initialP);
 
       setTimeout(() => {
-        const scrollToValue = (ref, items, value, paddedItems) => {
-          const el = ref.current;
-          if (!el || !value) return;
-          const itemIndex = items.indexOf(value);
-          const itemHeight = el.scrollHeight / paddedItems.length;
-          el.scrollTop = (itemIndex + 2) * itemHeight;
-        };
-        scrollToValue(hourRef, hours, initialH, paddedHours);
-        scrollToValue(minuteRef, minutes, initialM, paddedMinutes);
-        scrollToValue(
-          periodRef,
-          periods,
-          initialP,
-          ["", ""].concat(periods).concat(["", ""])
-        );
+        const itemHeight = getItemHeight(hourRef);
+        const hourIndex = hours.indexOf(initialH);
+        const minuteIndex = minutes.indexOf(initialM);
+
+        // Calculate center position (3 items above and 3 below the selected item)
+        const centerOffset = 3 * itemHeight;
+
+        if (hourRef.current && hourIndex > -1) {
+          const targetScrollTop =
+            (hours.length + hourIndex) * itemHeight - centerOffset;
+          hourRef.current.scrollTop = targetScrollTop;
+        }
+
+        if (minuteRef.current && minuteIndex > -1) {
+          const targetScrollTop =
+            (minutes.length + minuteIndex) * itemHeight - centerOffset;
+          minuteRef.current.scrollTop = targetScrollTop;
+        }
+
+        setTimeout(() => (isInitialSetup.current = false), 200);
       }, 0);
     }
   }, [isOpen, initialTime]);
 
-  const handleConfirm = () => {
-    onConfirm(
-      `${selectedHour.padStart(2, "0")}:${selectedMinute} ${selectedPeriod}`
-    );
-    onClose();
+  const createScrollHandler = (ref, items, infiniteItems, setter) => () => {
+    if (isInitialSetup.current) return;
+
+    clearTimeout(scrollTimeout.current);
+    scrollTimeout.current = setTimeout(() => {
+      const el = ref.current;
+      if (!el) return;
+
+      const itemHeight = getItemHeight(el);
+      const itemsLength = items.length;
+
+      // Calculate the center index based on scroll position plus center offset
+      const centerOffset = 3 * itemHeight; // 3 items above center
+      const centerIndex = Math.round(
+        (el.scrollTop + centerOffset) / itemHeight
+      );
+      const newValue = infiniteItems[centerIndex];
+      if (newValue) setter(newValue);
+
+      // Infinite scroll logic
+      if (centerIndex < itemsLength) {
+        el.scrollTop += itemsLength * itemHeight;
+      } else if (centerIndex >= itemsLength * 2) {
+        el.scrollTop -= itemsLength * itemHeight;
+      }
+    }, 150);
   };
+
+  const handleConfirm = () =>
+    onConfirm(`${selectedHour}:${selectedMinute} ${selectedPeriod}`);
 
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="time-picker-overlay" onMouseDown={onClose}>
-      <div
-        className="time-picker-container"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <div className="time-picker-header">Select a Time</div>
-        <div className="time-picker-body">
-          <div className="time-picker-highlight"></div>
+    <>
+      <ComponentStyles />
+      <div className="tp-beautified-overlay" onMouseDown={onClose}>
+        <div
+          className="tp-beautified-container"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="tp-beautified-header">Select a Time</div>
+          <div className="tp-beautified-body">
+            <div className="tp-beautified-highlight"></div>
 
-          <div ref={hourRef} className="time-picker-column">
-            {paddedHours.map((hour, index) => (
-              <div
-                key={`h-${index}`}
-                data-value={hour}
-                className={`time-picker-item ${
-                  selectedHour === hour ? "is-selected" : ""
-                }`}
-              >
-                {hour}
-              </div>
-            ))}
-          </div>
-
-          <div className="time-picker-colon">:</div>
-
-          <div ref={minuteRef} className="time-picker-column">
-            {paddedMinutes.map((minute, index) => (
-              <div
-                key={`m-${index}`}
-                data-value={minute}
-                className={`time-picker-item ${
-                  selectedMinute === minute ? "is-selected" : ""
-                }`}
-              >
-                {minute}
-              </div>
-            ))}
-          </div>
-
-          <div ref={periodRef} className="time-picker-column period-column">
-            {["", ""]
-              .concat(periods)
-              .concat(["", ""])
-              .map((period, index) => (
+            <div
+              className="tp-beautified-column"
+              ref={hourRef}
+              onScroll={createScrollHandler(
+                hourRef,
+                hours,
+                infiniteHours,
+                setSelectedHour
+              )}
+            >
+              {infiniteHours.map((hour, i) => (
                 <div
-                  key={`p-${index}`}
-                  data-value={period}
-                  className={`time-picker-item ${
+                  key={`h-${i}`}
+                  className={`tp-beautified-item ${
+                    selectedHour === hour ? "is-selected" : ""
+                  }`}
+                >
+                  {hour}
+                </div>
+              ))}
+            </div>
+
+            <div className="tp-beautified-colon">:</div>
+
+            <div
+              className="tp-beautified-column"
+              ref={minuteRef}
+              onScroll={createScrollHandler(
+                minuteRef,
+                minutes,
+                infiniteMinutes,
+                setSelectedMinute
+              )}
+            >
+              {infiniteMinutes.map((minute, i) => (
+                <div
+                  key={`m-${i}`}
+                  className={`tp-beautified-item ${
+                    selectedMinute === minute ? "is-selected" : ""
+                  }`}
+                >
+                  {minute}
+                </div>
+              ))}
+            </div>
+
+            <div className="tp-beautified-period-container">
+              {periods.map((period) => (
+                <div
+                  key={period}
+                  className={`tp-beautified-period-option ${
                     selectedPeriod === period ? "is-selected" : ""
                   }`}
+                  onClick={() => setSelectedPeriod(period)}
                 >
                   {period}
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="tp-beautified-footer">
+            <button onClick={onClose} className="tp-beautified-btn cancel">
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirm}
+              className="tp-beautified-btn confirm"
+            >
+              OK
+            </button>
           </div>
         </div>
-        <div className="time-picker-footer">
-          <button onClick={onClose} className="time-picker-btn cancel">
-            Cancel
-          </button>
-          <button onClick={handleConfirm} className="time-picker-btn confirm">
-            OK
-          </button>
-        </div>
       </div>
-    </div>,
+    </>,
     document.body
   );
 };

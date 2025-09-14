@@ -30,27 +30,11 @@ export default function Dashboard() {
         <p>Welcome back, Admin! Here's a quick summary of today's activity.</p>
       </Card>
 
-      <Card title="Daily Availability">
-        <div className="toggle-container">
-          <div>
-            <strong>Service Availability Today</strong>
-            <p className="sub">
-              {available
-                ? "Active and recurring bookings."
-                : "Inactive. 'Fully booked today...' message will display."}
-            </p>
-          </div>
-          <ToggleSwitch
-            checked={available}
-            onChange={() => setAvailable(!available)}
-          />
-        </div>
-      </Card>
-
       <div className="dashboard-grid">
         <Card title="Today's Orders">
           <p className="dashboard-metric">{orders.length}</p>
         </Card>
+
         <Card title="Estimated Revenue">
           <p className="dashboard-metric">${revenue.toFixed(2)}</p>
         </Card>
