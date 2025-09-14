@@ -7,46 +7,74 @@
 
 html,
 body {
-  @apply h-full font-sans antialiased overflow-x-hidden;
+  @apply h-auto font-sans antialiased overflow-x-hidden overflow-y-scroll;
 }
 
 body {
-  @apply flex flex-col items-center p-10 text-white;
-  background: radial-gradient(
-      circle at 20% 20%,
-      rgba(0, 200, 255, 0.25),
-      transparent 40%
-    ),
-    radial-gradient(
-      circle at 90% 90%,
-      rgba(138, 92, 255, 0.25),
-      transparent 35%
-    ),
-    linear-gradient(135deg, #00d9ff 0%, #6a5cff 60%, #b76dff 100%);
+  font-family: "Poppins", sans-serif;
+  @apply text-black min-h-screen overflow-x-hidden antialiased relative;
+  background: linear-gradient(
+    120deg,
+    #9069fa,
+    #00aaff,
+    #10ecfc,
+    #00cfff,
+    #00aaff,
+    #a77fff,
+    #d16fff
+  );
+  background-size: 100% 100%;
+  background-attachment: fixed;
+  animation: gradientShift 20s ease infinite;
+  padding: 3rem 1.5rem 6rem 1.5rem;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* === Container Wrapper === */
 .wrap {
-  @apply w-full max-w-7xl mx-auto px-4;
+  @apply w-[88vw] mx-auto p-12 px-4;
+}
+
+/* === Fullscreen Dashboard === */
+.dashboard-page {
+  @apply w-full   px-4 md:px-8 py-6;
 }
 
 /* === Header / Logo === */
-header {
+.header {
   @apply text-center mb-10;
 }
 
-.logo {
-  @apply w-24 h-24 mx-auto rounded-2xl grid place-items-center shadow-2xl;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(8px);
+.header-logo-container {
+  @apply w-28 h-28 mx-auto rounded-3xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.35)];
+}
+
+.header-logo {
+  @apply w-full h-full object-cover;
+}
+
+.header-title {
+  @apply text-2xl font-bold mt-3;
 }
 
 h1 {
-  @apply text-4xl font-extrabold mt-4 text-shadow-lg;
+  @apply text-4xl font-extrabold mt-4;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 }
 
 .sub {
-  @apply text-base text-white/80 mt-1.5;
+  @apply text-base text-black mt-1.5;
 }
 
 .brand-stripe {
@@ -57,9 +85,9 @@ h1 {
 
 /* === Navigation Tabs === */
 .nav-bar {
-  @apply flex flex-wrap justify-between items-center p-4 my-8 mx-auto rounded-2xl border border-white/10 shadow-2xl;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(12px);
+  @apply flex flex-wrap justify-between items-center p-4 my-8 mx-auto rounded-2xl border border-white shadow-white/75 shadow-2xl;
+  background-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(60px);
 }
 
 .nav-bar ul {
@@ -67,11 +95,11 @@ h1 {
 }
 
 .nav-link {
-  @apply px-4 py-2.5 text-sm font-semibold rounded-xl text-white/80 transition-all duration-200 ease-in-out whitespace-nowrap no-underline;
+  @apply px-4 py-2.5 text-sm font-semibold rounded-xl text-black transition-all duration-200 ease-in-out whitespace-nowrap no-underline;
 }
 
 .nav-link:hover {
-  @apply bg-white/10 text-white;
+  @apply bg-white/5 text-black;
 }
 
 .nav-link.active {
@@ -80,42 +108,55 @@ h1 {
 }
 
 .nav-search input {
-  @apply w-full max-w-xs px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm;
+  @apply w-full max-w-xs px-4 py-3 rounded-xl border border-white/10 text-sm;
   backdrop-filter: blur(6px);
 }
 
 /* === Card Panel === */
 .card {
-  @apply border border-white/10 rounded-2xl p-8 mb-7 shadow-2xl transition-transform duration-200 ease-in-out overflow-x-auto;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(14px);
+  @apply border border-white rounded-2xl p-8 mb-7 shadow-white shadow-2xl transition-transform duration-200 ease-in-out overflow-x-auto;
+  background-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(60px);
 }
 
 .card:hover {
-  @apply -translate-y-1 shadow-2xl;
-  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.55);
+  @apply -translate-y-1;
 }
 
 .card h2 {
-  @apply text-xl font-bold mb-4 text-white border-b border-white/10 pb-2;
+  @apply text-xl font-bold mb-4  border-b border-white/10 pb-2;
 }
 
 /* === Table Styling === */
 table {
-  @apply w-full border-collapse mt-4 text-sm text-white/80;
+  @apply w-full border-collapse mt-4 text-sm text-black;
 }
 
 th,
 td {
   @apply p-3 text-left border-b border-white/10 whitespace-nowrap;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+th:last-child,
+td:last-child {
+  border-right: none;
 }
 
 th {
-  @apply font-bold uppercase text-xs text-white/60;
+  @apply font-bold uppercase text-xs text-black;
 }
 
 tr:hover {
-  @apply bg-white/5;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.02)
+  );
+}
+
+tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 /* === Status Pill === */
@@ -133,6 +174,10 @@ tr:hover {
 }
 
 /* === Form Inputs === */
+.form-input {
+  @apply w-full bg-white/50 text-white border border-white rounded-lg px-4 py-2;
+}
+
 input[type="text"],
 input[type="password"],
 select {
@@ -141,71 +186,208 @@ select {
 }
 
 input::placeholder {
-  @apply text-white/60;
+  @apply text-black;
 }
 
 /* === Buttons === */
-button {
-  @apply px-6 py-3 text-base font-semibold rounded-xl text-white border-none cursor-pointer transition-transform duration-200 ease-in-out;
+.btn-add {
+  @apply px-6 py-3 text-base font-semibold rounded-xl text-white border-none cursor-pointer transition-transform duration-200 ease-in-out bg-green-600 hover:bg-green-700;
   box-shadow: 0 6px 20px rgba(0, 200, 255, 0.3);
 }
 
-button:hover {
+.btn-danger {
+  @apply px-6 py-3 text-base font-semibold rounded-xl text-white border-none cursor-pointer transition-transform duration-200 ease-in-out bg-red-600 hover:bg-red-700;
+  box-shadow: 0 6px 20px rgba(0, 200, 255, 0.3);
+}
+
+.btn-edit {
+  @apply px-6 py-3 text-base font-semibold rounded-xl text-white border-none cursor-pointer transition-transform duration-200 ease-in-out bg-blue-600 hover:bg-blue-700;
+  box-shadow: 0 6px 20px rgba(0, 200, 255, 0.3);
+}
+
+.btn-add:hover,
+.btn-danger:hover,
+.btn-edit:hover {
   @apply -translate-y-0.5;
   box-shadow: 0 10px 30px rgba(0, 200, 255, 0.4);
 }
 
+/* === Control Panel Specifics === */
+.control-panel-grid {
+  @apply grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8;
+}
+
+.control-panel-grid > .card:first-child {
+  @apply lg:col-span-2;
+}
+
+.cp-list {
+  @apply space-y-3;
+}
+
+.cp-list-item {
+  @apply flex flex-col sm:flex-row justify-between items-center gap-3 bg-white/10 p-3 rounded-lg border border-cyan-400;
+}
+
+.cp-list-item .item-name {
+  @apply font-medium flex-1 text-center sm:text-left;
+}
+
+.cp-list-item .item-actions {
+  @apply flex items-center gap-2;
+}
+
+.cp-input {
+  @apply w-32 bg-white border border-white rounded-lg p-2 text-right focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all;
+}
+
+.btn-icon {
+  @apply p-2 rounded-full text-white transition-colors duration-200;
+}
+
+.btn-icon.delete {
+  @apply bg-red-600/70 hover:bg-red-600;
+}
+
+.add-item-form {
+  @apply flex  flex-col items-center justify-center gap-4 mt-6;
+}
+
+.add-item-input {
+  @apply w-full bg-white/50 border border-cyan-400 rounded-lg p-3 m-0 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all;
+}
+
+.add-item-btn {
+  @apply w-full p-3 font-semibold px-8 rounded-lg bg-purple-600 text-white hover:bg-green-600 cursor-pointer transition-colors shrink-0 flex items-center justify-center;
+}
+
+.time-input-container {
+  @apply flex flex-row items-center justify-center gap-2 w-full;
+}
+
+.time-separator {
+  @apply text-black font-bold text-2xl;
+}
+
+/* === STYLES FOR CUSTOM TIME PICKER === */
+
+.time-picker-button {
+  @apply w-full flex-grow min-w-0 bg-white/50 border border-cyan-400 rounded-lg p-3 text-center cursor-pointer font-semibold text-black;
+  @apply focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all;
+}
+
+.time-picker-overlay {
+  @apply fixed inset-0 bg-black/60 flex items-center justify-center z-50;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.time-picker-container {
+  @apply bg-white rounded-2xl shadow-xl w-80 max-w-[90vw] flex flex-col;
+}
+
+.time-picker-header {
+  @apply p-4 text-xl font-bold text-cyan-600 text-center;
+}
+
+.time-picker-body {
+  @apply relative flex justify-center items-center h-52 p-4 gap-1;
+}
+
+.time-picker-highlight {
+  @apply absolute top-1/2 left-4 right-4 h-12 -translate-y-1/2 border-y-2 border-cyan-400 pointer-events-none rounded-lg;
+  background-color: rgba(0, 170, 255, 0.05);
+}
+
+.time-picker-colon {
+  @apply text-3xl font-bold h-12 flex items-center justify-center text-gray-700;
+}
+
+.time-picker-column {
+  @apply h-full w-full flex-1 overflow-y-scroll scroll-smooth;
+  scroll-snap-type: y mandatory;
+}
+
+.time-picker-column.period-column {
+  @apply flex-grow-0 w-24; /* Give AM/PM column a fixed width */
+}
+
+/* Hide scrollbar for all browsers */
+.time-picker-column {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.time-picker-column::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+.time-picker-item {
+  @apply h-12 flex items-center justify-center text-3xl text-gray-400 transition-all duration-200;
+  scroll-snap-align: center;
+}
+
+.time-picker-item.is-selected {
+  @apply text-cyan-600 font-bold scale-110;
+}
+
+.time-picker-footer {
+  @apply flex justify-end gap-3 p-4 border-t border-gray-200;
+}
+
+.time-picker-btn {
+  @apply px-5 py-2 rounded-lg font-semibold text-sm transition-colors;
+}
+
+.time-picker-btn.confirm {
+  @apply bg-cyan-500 text-white hover:bg-cyan-600;
+}
+
+.time-picker-btn.cancel {
+  @apply bg-transparent text-gray-600 hover:bg-gray-200;
+}
+
+
 /* === Responsive Fixes === */
-@media (max-width: 768px) {
-  .nav-bar {
-    @apply flex-col gap-4 p-5;
-  }
-
-  .nav-bar ul {
-    @apply justify-center;
-  }
-
-  .nav-search input {
-    @apply w-full;
+@media (max-width: 1024px) {
+  table {
+    @apply text-xs;
   }
 
   .card {
     @apply p-6;
   }
 
-  .card h2 {
-    @apply text-lg;
+  .dashboard-metric {
+    @apply text-3xl;
   }
+}
 
-  input[type="text"],
-  input[type="password"],
-  select {
-    @apply text-sm py-2.5 px-3.5;
+@media (max-width: 768px) {
+  .nav-bar {
+    @apply flex-col gap-4 p-5;
   }
-
-  button {
-    @apply text-sm py-2.5 px-5;
+  .nav-bar ul {
+    @apply justify-center;
   }
-
+  .nav-search input {
+    @apply w-full;
+  }
   .orders-table-container thead {
     @apply hidden;
   }
-
   .orders-table-container tr {
-    @apply block mb-5 border border-white/10 rounded-lg overflow-hidden;
+    @apply block mb-5  bg-white/5 border-white border-2 rounded-lg overflow-hidden;
+    backdrop-filter: blur(60px);
   }
-
   .orders-table-container td {
-    @apply block text-right pl-1/2 relative border-b border-white/5;
+    @apply block text-right pl-[50%] relative border-b border-white/50  text-pretty;
   }
-
   .orders-table-container td:last-child {
     @apply border-b-0;
   }
-
   .orders-table-container td::before {
     content: attr(data-label);
-    @apply absolute left-4 font-bold uppercase text-xs text-white/60;
+    @apply absolute left-4 font-bold uppercase text-xs;
   }
 }
 
@@ -213,11 +395,9 @@ button:hover {
 .card::-webkit-scrollbar {
   @apply h-1.5 w-1.5;
 }
-
 .card::-webkit-scrollbar-thumb {
   @apply bg-white/20 rounded-full;
 }
-
 .card::-webkit-scrollbar-track {
   @apply bg-transparent;
 }

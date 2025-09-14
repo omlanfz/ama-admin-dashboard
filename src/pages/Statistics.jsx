@@ -9,10 +9,10 @@ export default function Statistics() {
   ];
 
   return (
-    <div className="grid two">
+    <div className="statistics-grid">
       {stats.map((stat, index) => (
         <Card key={index} title={stat.label}>
-          <p className="text-4xl font-bold">{stat.value}</p>
+          <p className="statistics-metric">{stat.value}</p>
         </Card>
       ))}
     </div>

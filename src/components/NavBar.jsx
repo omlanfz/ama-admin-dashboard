@@ -1,16 +1,16 @@
 const links = [
   { id: "dashboard", label: "Dashboard" },
   { id: "orders", label: "Orders" },
-  { id: "camps", label: "Camps" }, // Add this line
+  { id: "camps", label: "Camps" },
   { id: "statistics", label: "Statistics" },
   { id: "control", label: "Control Panel" },
-  { id: "account", label: "Account Settings" },
+  { id: "account", label: "Account" },
 ];
 
 export default function NavBar({ activeTab, setActiveTab }) {
   return (
     <nav className="nav-bar">
-      <ul>
+      <ul className="nav-links">
         {links.map((link) => (
           <li key={link.id}>
             <button

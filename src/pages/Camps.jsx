@@ -5,14 +5,14 @@ import { fetchCamps, createCamp, updateCamp, deleteCamp } from "../api/camps";
 export default function Camps() {
   const [camps, setCamps] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [newCampName, setNewCampName] = useState('');
+  const [error, setError] = useState("");
+  const [newCampName, setNewCampName] = useState("");
   const [editingCamp, setEditingCamp] = useState(null); // { id, name }
 
   const loadCamps = async () => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
       const campsData = await fetchCamps();
       setCamps(campsData);
     } catch (err) {
@@ -31,13 +31,13 @@ export default function Camps() {
     if (!newCampName.trim()) return;
     try {
       await createCamp(newCampName);
-      setNewCampName('');
+      setNewCampName("");
       loadCamps(); // Refresh the list
     } catch (err) {
       setError(err.message);
     }
   };
-  
+
   const handleUpdateCamp = async (id, name) => {
     if (!name.trim()) return;
     try {
@@ -45,7 +45,7 @@ export default function Camps() {
       setEditingCamp(null); // Exit editing mode
       loadCamps(); // Refresh the list
     } catch (err) {
-       setError(err.message);
+      setError(err.message);
     }
   };
 
@@ -59,45 +59,68 @@ export default function Camps() {
       }
     }
   };
-  
+
   return (
     <>
       <Card title="Add New Camp">
-        <form onSubmit={handleAddCamp} className="flex gap-2">
+        <form onSubmit={handleAddCamp} className="camps-add-form">
           <input
             type="text"
             value={newCampName}
             onChange={(e) => setNewCampName(e.target.value)}
             placeholder="Enter camp name"
-            className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-4 py-2"
+            className="camps-input"
           />
-          <button type="submit" className="btn-add">Add Camp</button>
+          <button type="submit" className="btn-add">
+            Add Camp
+          </button>
         </form>
       </Card>
 
       <Card title="Manage Existing Camps">
         {loading && <p>Loading camps...</p>}
         {error && <p className="text-red-500">{error}</p>}
-        <div className="list-table">
-          {camps.map(camp => (
-            <div key={camp.id}>
+        <div className="camps-list">
+          {camps.map((camp) => (
+            <div key={camp.id} className="camps-list-item">
               {editingCamp?.id === camp.id ? (
-                 <input
-                    type="text"
-                    value={editingCamp.name}
-                    onChange={(e) => setEditingCamp({ ...editingCamp, name: e.target.value })}
-                    className="w-full bg-slate-700 text-white border border-slate-500 rounded-lg px-4 py-2"
-                  />
+                <input
+                  type="text"
+                  value={editingCamp.name}
+                  onChange={(e) =>
+                    setEditingCamp({ ...editingCamp, name: e.target.value })
+                  }
+                  className="camps-input"
+                />
               ) : (
-                <div className="label"><strong>{camp.name}</strong></div>
+                <div className="camps-list-item-name">
+                  <strong>{camp.name}</strong>
+                </div>
               )}
-              <div className="flex gap-2">
+              <div className="camps-list-item-actions">
                 {editingCamp?.id === camp.id ? (
-                  <button onClick={() => handleUpdateCamp(editingCamp.id, editingCamp.name)} className="btn-add">Save</button>
+                  <button
+                    onClick={() =>
+                      handleUpdateCamp(editingCamp.id, editingCamp.name)
+                    }
+                    className="btn-add"
+                  >
+                    Save
+                  </button>
                 ) : (
-                  <button onClick={() => setEditingCamp(camp)} className="bg-blue-600 hover:bg-blue-700">Edit</button>
+                  <button
+                    onClick={() => setEditingCamp(camp)}
+                    className="btn-edit"
+                  >
+                    Edit
+                  </button>
                 )}
-                 <button onClick={() => handleDeleteCamp(camp.id)} className="btn-danger">Delete</button>
+                <button
+                  onClick={() => handleDeleteCamp(camp.id)}
+                  className="btn-danger"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           ))}

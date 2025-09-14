@@ -26,14 +26,14 @@ export default function Account() {
   return (
     <>
       <Card title="Profile Settings">
-        <div className="grid gap-4">
-          <label className="block">
-            <span className="font-medium">Display Name</span>
+        <div className="account-grid">
+          <label className="account-label">
+            <span className="account-label-text">Display Name</span>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-4 py-2 mt-1"
+              className="account-input"
             />
           </label>
 
@@ -52,30 +52,30 @@ export default function Account() {
       </Card>
 
       <Card title="Change Password">
-        <form onSubmit={handlePasswordUpdate} className="grid gap-4">
+        <form onSubmit={handlePasswordUpdate} className="account-grid">
           <input
             type="password"
             placeholder="Current Password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="bg-slate-800 text-white border border-slate-600 rounded-lg px-4 py-2"
+            className="form-input"
           />
           <input
             type="password"
             placeholder="New Password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="bg-slate-800 text-white border border-slate-600 rounded-lg px-4 py-2"
+            className="form-input"
           />
           <button type="submit" className="btn-add">
             Update Password
           </button>
-          {message && <p className="text-sm text-slate-300">{message}</p>}
+          {message && <p className="account-message">{message}</p>}
         </form>
       </Card>
 
       <Card title="Session">
-        <div className="grid gap-4">
+        <div className="account-session-info">
           <p>
             You are logged in as <strong>{displayName}</strong>
           </p>

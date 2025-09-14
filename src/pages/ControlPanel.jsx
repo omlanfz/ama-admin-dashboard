@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import Card from "../components/Card";
+import TimePicker from "../components/TimePicker"; // Import the component
 import {
   getSettings,
   updateSettings,
@@ -11,16 +12,40 @@ import {
   updateServicePrice,
 } from "../api/controlPanel";
 
+// Helper function (remains the same)
+const convertTo24Hour = (time12h) => {
+  if (!time12h) return "";
+  const [time, period] = time12h.split(" ");
+  let [hours, minutes] = time.split(":");
+  hours = parseInt(hours, 10);
+  if (period === "PM" && hours !== 12) {
+    hours += 12;
+  }
+  if (period === "AM" && hours === 12) {
+    hours = 0;
+  }
+  return `${hours.toString().padStart(2, "0")}:${minutes}`;
+};
+
 export default function ControlPanel() {
   const [loading, setLoading] = useState(true);
   const [prices, setPrices] = useState([]);
   const [pickupSlots, setPickupSlots] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [dailyAvailability, setDailyAvailability] = useState(true);
-  const [newSlot, setNewSlot] = useState("");
+  const [newSlotStart, setNewSlotStart] = useState("");
+  const [newSlotEnd, setNewSlotEnd] = useState("");
   const [newPaymentMethod, setNewPaymentMethod] = useState("");
   const [error, setError] = useState("");
 
+  // State for managing the TimePicker modal
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerConfig, setPickerConfig] = useState({
+    target: null,
+    initialValue: "",
+  });
+
+  // (useEffect and other handlers remain the same)
   useEffect(() => {
     const fetchSettings = async () => {
       setLoading(true);
@@ -56,12 +81,21 @@ export default function ControlPanel() {
   };
 
   const handleAddSlot = async () => {
-    if (!newSlot.trim()) return;
+    if (!newSlotStart || !newSlotEnd) {
+      setError("Please select both a start and end time.");
+      return;
+    }
+    setError("");
     try {
-      const addedSlot = await createPickupSlot(newSlot.trim());
+      const startTime24 = convertTo24Hour(newSlotStart);
+      const endTime24 = convertTo24Hour(newSlotEnd);
+      const newSlotValue = `${startTime24} - ${endTime24}`;
+
+      const addedSlot = await createPickupSlot(newSlotValue);
       const newSlotForState = { id: addedSlot.id, time: addedSlot.acf.time };
       setPickupSlots([...pickupSlots, newSlotForState]);
-      setNewSlot("");
+      setNewSlotStart("");
+      setNewSlotEnd("");
     } catch (err) {
       setError(err.message);
     }
@@ -108,360 +142,190 @@ export default function ControlPanel() {
     });
   };
 
+  // MODIFIED: Functions to control the TimePicker modal
+  const openPicker = (target, initialValue) => {
+    setPickerConfig({ target, initialValue });
+    setIsPickerOpen(true);
+  };
+
+  const handlePickerConfirm = (time) => {
+    if (pickerConfig.target === "start") {
+      setNewSlotStart(time);
+    } else if (pickerConfig.target === "end") {
+      setNewSlotEnd(time);
+    }
+    setIsPickerOpen(false);
+  };
+
   if (loading) {
     return <div className="text-center p-10">Loading settings...</div>;
   }
 
-  if (error) {
-    return <div className="text-center p-10 text-red-400">{error}</div>;
-  }
-
   return (
     <div className="space-y-8">
-      <header className="text-center">
+      {/* ... (Header, Error, other Cards remain unchanged) ... */}
+      <header className="text-center m-4">
         <h1 className="text-3xl font-bold">Control Panel</h1>
-        <p className="text-slate-300 mt-1">
-          Use these settings to configure your service.
+        <p className="sub mt-1 mb-1 pb-8">
+          Manage service availability, pricing, and payment options.
         </p>
       </header>
 
       {error && (
-        <p className="text-center text-red-400 bg-red-900/50 p-3 rounded-lg">
-          {error}
-        </p>
+        <div className="bg-red-900/50 text-red-300 p-4 rounded-lg text-center">
+          <p>
+            <strong>Error:</strong> {error}
+          </p>
+        </div>
       )}
 
-      <Card title="Daily Availability">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p>
-            {dailyAvailability
-              ? "Service is available for booking today."
-              : "Service is inactive. Users will see a 'Fully booked' message."}
-          </p>
-          <button
-            onClick={handleToggleAvailability}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors w-full sm:w-auto ${
-              dailyAvailability
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
-          >
-            {dailyAvailability ? "Deactivate for Today" : "Activate for Today"}
-          </button>
-        </div>
-      </Card>
-
-      <Card title="Service Pricing">
-        <div className="space-y-3">
-          {prices.map((item) => (
-            <div
-              key={item.id}
-              className="flex flex-col sm:flex-row justify-between items-center gap-2 bg-black/20 p-3 rounded-lg"
+      <div className="control-panel-grid">
+        <Card title="Daily Availability">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="flex-1 text-center sm:text-left">
+              {dailyAvailability
+                ? "Service is available for booking today."
+                : "Service is inactive. Users will see a 'Fully booked' message."}
+            </p>
+            <button
+              onClick={handleToggleAvailability}
+              className={`w-full sm:w-auto ${
+                dailyAvailability ? "btn-danger" : "btn-add"
+              }`}
             >
-              <span className="font-medium">{item.name}</span>
-              <div className="flex items-center gap-2">
-                <span className="text-lg text-slate-400">$</span>
-                <input
-                  type="number"
-                  value={item.price}
-                  onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                  onBlur={(e) =>
-                    handlePriceUpdateOnBlur(item.id, e.target.value)
-                  }
-                  className="w-28 bg-slate-800 border border-slate-600 rounded-lg p-2 text-right focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+              {dailyAvailability
+                ? "Deactivate for Today"
+                : "Activate for Today"}
+            </button>
+          </div>
+        </Card>
+
+        <Card title="Service Pricing">
+          <div className="cp-list">
+            {prices.map((item) => (
+              <div key={item.id} className="cp-list-item">
+                <span className="item-name">{item.name}</span>
+                <div className="item-actions">
+                  <span className="text-lg text-slate-300">$</span>
+                  <input
+                    type="number"
+                    value={item.price}
+                    onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                    onBlur={(e) =>
+                      handlePriceUpdateOnBlur(item.id, e.target.value)
+                    }
+                    className="cp-input add-item-input"
+                    aria-label={`Price for ${item.name}`}
+                  />
+                </div>
               </div>
+            ))}
+          </div>
+        </Card>
+
+        <div className="grid gap-8">
+          <Card title="Pickup Schedules">
+            <div className="cp-list">
+              {pickupSlots.map((slot) => (
+                <div key={slot.id} className="cp-list-item">
+                  <span className="item-name">{slot.time}</span>
+                  <div className="item-actions">
+                    <button
+                      onClick={() => handleDeleteSlot(slot.id)}
+                      className="btn-icon delete"
+                      aria-label={`Delete slot ${slot.time}`}
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card title="Pickup Schedules">
-        <div className="space-y-3 mb-6">
-          {pickupSlots.length > 0 ? (
-            pickupSlots.map((slot) => (
-              <div
-                key={slot.id}
-                className="flex justify-between items-center bg-black/20 p-3 rounded-lg"
-              >
-                <span className="font-medium">{slot.time}</span>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAddSlot();
+              }}
+              className="add-item-form"
+            >
+              <div className="time-input-container">
+                {/* MODIFIED: onClick now passes the current value */}
                 <button
-                  onClick={() => handleDeleteSlot(slot.id)}
-                  className="p-2 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors"
-                  aria-label="Delete slot"
+                  type="button"
+                  onClick={() => openPicker("start", newSlotStart)}
+                  className="time-picker-button"
                 >
-                  <TrashIcon className="h-5 w-5" />
+                  {newSlotStart || "Start Time"}
+                </button>
+                <span className="time-separator">-</span>
+                <button
+                  type="button"
+                  onClick={() => openPicker("end", newSlotEnd)}
+                  className="time-picker-button"
+                >
+                  {newSlotEnd || "End Time"}
                 </button>
               </div>
-            ))
-          ) : (
-            <p className="text-center text-slate-400">
-              No pickup slots added yet.
-            </p>
-          )}
-        </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleAddSlot();
-          }}
-          className="flex items-center gap-2"
-        >
-          <input
-            type="text"
-            value={newSlot}
-            onChange={(e) => setNewSlot(e.target.value)}
-            placeholder="e.g., 20:00 - 21:00"
-            className="flex-grow bg-slate-800 border border-slate-600 rounded-lg p-3 m-0 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-          <button
-            type="submit"
-            className="p-3 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
-            aria-label="Add slot"
-          >
-            <PlusIcon className="h-5 w-5" />
-          </button>
-        </form>
-      </Card>
-
-      <Card title="Payment Methods">
-        <div className="space-y-3 mb-6">
-          {paymentMethods.length > 0 ? (
-            paymentMethods.map((method) => (
-              <div
-                key={method.id}
-                className="flex justify-between items-center bg-black/20 p-3 rounded-lg"
+              <button
+                type="submit"
+                className="add-item-btn"
+                aria-label="Add new pickup slot"
               >
-                <span className="font-medium">{method.name}</span>
-                <button
-                  onClick={() => handleDeletePaymentMethod(method.id)}
-                  className="p-2 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors"
-                  aria-label="Delete payment method"
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
-              </div>
-            ))
-          ) : (
-            <p className="text-center text-slate-400">
-              No payment methods added yet.
-            </p>
-          )}
+                Add Pickup Slot
+              </button>
+            </form>
+          </Card>
+
+          <Card title="Payment Methods">
+            {/* ... (This card's content remains unchanged) ... */}
+            <div className="cp-list">
+              {paymentMethods.map((method) => (
+                <div key={method.id} className="cp-list-item">
+                  <span className="item-name">{method.name}</span>
+                  <div className="item-actions">
+                    <button
+                      onClick={() => handleDeletePaymentMethod(method.id)}
+                      className="btn-icon delete"
+                      aria-label={`Delete payment method ${method.name}`}
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAddPaymentMethod();
+              }}
+              className="add-item-form"
+            >
+              <input
+                type="text"
+                value={newPaymentMethod}
+                onChange={(e) => setNewPaymentMethod(e.target.value)}
+                placeholder="Add new payment method"
+                className="add-item-input"
+              />
+              <button
+                type="submit"
+                className="add-item-btn"
+                aria-label="Add new payment method"
+              >
+                Add Payment Method
+              </button>
+            </form>
+          </Card>
         </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleAddPaymentMethod();
-          }}
-          className="flex items-center gap-2"
-        >
-          <input
-            type="text"
-            value={newPaymentMethod}
-            onChange={(e) => setNewPaymentMethod(e.target.value)}
-            placeholder="Add new payment method"
-            className="flex-grow bg-slate-800 border border-slate-600 rounded-lg p-3 m-0 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-          <button
-            type="submit"
-            className="p-3 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
-            aria-label="Add payment method"
-          >
-            <PlusIcon className="h-5 w-5" />
-          </button>
-        </form>
-      </Card>
+      </div>
+      {/* MODIFIED: Render the TimePicker with the initialTime prop */}
+      <TimePicker
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        onConfirm={handlePickerConfirm}
+        initialTime={pickerConfig.initialValue}
+      />
     </div>
   );
 }
-
-// import { useState, useEffect } from "react";
-// import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
-// import Card from "../components/Card";
-// import {
-//   getSettings,
-//   updateSettings,
-//   createPickupSlot,
-//   deletePickupSlot,
-//   createPaymentMethod,
-//   deletePaymentMethod,
-//   updateServicePrice,
-// } from "../api/controlPanel";
-
-// export default function ControlPanel() {
-//   const [loading, setLoading] = useState(true);
-//   const [prices, setPrices] = useState([]);
-//   const [pickupSlots, setPickupSlots] = useState([]);
-//   const [paymentMethods, setPaymentMethods] = useState([]);
-//   const [dailyAvailability, setDailyAvailability] = useState(true);
-//   const [newSlot, setNewSlot] = useState("");
-//   const [newPaymentMethod, setNewPaymentMethod] = useState("");
-
-//   useEffect(() => {
-//     const fetchSettings = async () => {
-//       setLoading(true);
-//       try {
-//         const settings = await getSettings();
-//         setPrices(settings.prices);
-//         setPickupSlots(settings.pickupSlots);
-//         setPaymentMethods(settings.paymentMethods);
-//         setDailyAvailability(settings.dailyAvailability.isAvailable);
-//       } catch (error) {
-//         console.error("Failed to fetch settings:", error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-//     fetchSettings();
-//   }, []);
-
-//   const handlePriceChange = (id, newPrice) => {
-//     const updatedPrices = prices.map((item) =>
-//       item.id === id ? { ...item, price: parseFloat(newPrice) || 0 } : item
-//     );
-//     setPrices(updatedPrices);
-//     updateServicePrice(id, newPrice);
-//   };
-
-//   const handleAddSlot = async () => {
-//     if (newSlot.trim()) {
-//       const newPickupSlot = await createPickupSlot(newSlot.trim());
-//       setPickupSlots([...pickupSlots, newPickupSlot]);
-//       setNewSlot("");
-//     }
-//   };
-
-//   const handleDeleteSlot = async (id) => {
-//     await deletePickupSlot(id);
-//     setPickupSlots(pickupSlots.filter((slot) => slot.id !== id));
-//   };
-
-//   const handleAddPaymentMethod = async () => {
-//     if (newPaymentMethod.trim()) {
-//       const newMethod = await createPaymentMethod(newPaymentMethod.trim());
-//       setPaymentMethods([...paymentMethods, newMethod]);
-//       setNewPaymentMethod("");
-//     }
-//   };
-
-//   const handleDeletePaymentMethod = async (id) => {
-//     await deletePaymentMethod(id);
-//     setPaymentMethods(paymentMethods.filter((method) => method.id !== id));
-//   };
-
-//   const handleToggleAvailability = () => {
-//     const newAvailability = !dailyAvailability;
-//     setDailyAvailability(newAvailability);
-//     updateSettings({
-//       dailyAvailability: { isAvailable: newAvailability },
-//     });
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="flex-center">
-//         <p>Loading...</p>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <>
-//       <header className="text-center">
-//         <h1>Control Panel</h1>
-//         <p className="sub">Use these settings to configure your service.</p>
-//       </header>
-
-//       <Card title="Daily Availability">
-//         <div className="toggle-container">
-//           <p>
-//             {dailyAvailability
-//               ? "Available today"
-//               : "Fully booked today, happy to serve you tomorrow."}
-//           </p>
-//           <button
-//             onClick={handleToggleAvailability}
-//             className={`btn ${dailyAvailability ? "btn-danger" : "btn-add"}`}
-//           >
-//             {dailyAvailability ? "Deactivate Today" : "Activate Today"}
-//           </button>
-//         </div>
-//       </Card>
-
-//       <Card title="Service Pricing">
-//         <div className="list-table">
-//           {prices.map((item) => (
-//             <div key={item.id} className="list-item">
-//               <span className="label">{item.name}</span>
-//               <div className="flex items-center">
-//                 <span className="mr-2">$</span>
-//                 <input
-//                   type="number"
-//                   value={item.price}
-//                   onChange={(e) => handlePriceChange(item.id, e.target.value)}
-//                   className="w-24 text-right"
-//                 />
-//               </div>
-//             </div>
-//           ))}
-//         </div>
-//       </Card>
-
-//       <Card title="Pickup Schedules">
-//         <div className="list-table">
-//           {pickupSlots.map((slot) => (
-//             <div key={slot.id} className="list-item">
-//               <span className="label">{slot.time}</span>
-//               <button
-//                 onClick={() => handleDeleteSlot(slot.id)}
-//                 className="btn-danger p-2"
-//               >
-//                 <TrashIcon className="h-5 w-5" />
-//               </button>
-//             </div>
-//           ))}
-//         </div>
-//         <div className="mt-6 flex items-center space-x-2">
-//           <input
-//             type="text"
-//             value={newSlot}
-//             onChange={(e) => setNewSlot(e.target.value)}
-//             placeholder="e.g., 20:00 - 21:00"
-//             className="flex-grow"
-//           />
-//           <button onClick={handleAddSlot} className="btn-add p-3">
-//             <PlusIcon className="h-5 w-5" />
-//           </button>
-//         </div>
-//       </Card>
-
-//       <Card title="Payment Methods">
-//         <div className="list-table">
-//           {paymentMethods.map((method) => (
-//             <div key={method.id} className="list-item">
-//               <span className="label">{method.name}</span>
-//               <button
-//                 onClick={() => handleDeletePaymentMethod(method.id)}
-//                 className="btn-danger p-2"
-//               >
-//                 <TrashIcon className="h-5 w-5" />
-//               </button>
-//             </div>
-//           ))}
-//         </div>
-//         <div className="mt-6 flex items-center space-x-2">
-//           <input
-//             type="text"
-//             value={newPaymentMethod}
-//             onChange={(e) => setNewPaymentMethod(e.target.value)}
-//             placeholder="Add a new payment method"
-//             className="flex-grow"
-//           />
-//           <button onClick={handleAddPaymentMethod} className="btn-add p-3">
-//             <PlusIcon className="h-5 w-5" />
-//           </button>
-//         </div>
-//       </Card>
-//     </>
-//   );
-// }
