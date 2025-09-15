@@ -63,13 +63,13 @@ export default function Camps() {
   return (
     <>
       <Card title="Add New Camp">
-        <form onSubmit={handleAddCamp} className="camps-add-form">
+        <form onSubmit={handleAddCamp} className=" text-black">
           <input
             type="text"
             value={newCampName}
             onChange={(e) => setNewCampName(e.target.value)}
             placeholder="Enter camp name"
-            className="camps-input"
+            className="text-black text-center"
           />
           <button type="submit" className="btn-add">
             Add Camp
@@ -80,9 +80,9 @@ export default function Camps() {
       <Card title="Manage Existing Camps">
         {loading && <p>Loading camps...</p>}
         {error && <p className="text-red-500">{error}</p>}
-        <div className="camps-list">
+        <div className="cp-list">
           {camps.map((camp) => (
-            <div key={camp.id} className="camps-list-item">
+            <div key={camp.id} className="cp-list-item">
               {editingCamp?.id === camp.id ? (
                 <input
                   type="text"
@@ -90,14 +90,14 @@ export default function Camps() {
                   onChange={(e) =>
                     setEditingCamp({ ...editingCamp, name: e.target.value })
                   }
-                  className="camps-input"
+                  className="form-input text-black"
                 />
               ) : (
                 <div className="camps-list-item-name">
                   <strong>{camp.name}</strong>
                 </div>
               )}
-              <div className="camps-list-item-actions">
+              <div className="text-black flex gap-2">
                 {editingCamp?.id === camp.id ? (
                   <button
                     onClick={() =>
