@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import Card from "../components/Card";
-import {
-  fetchLaundryOrders,
-  updateOrderStatus,
-  debugOrder,
-  testOrderUpdate,
-} from "../api/bookings";
+import { fetchLaundryOrders, updateOrderStatus } from "../api/bookings";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -25,7 +20,6 @@ export default function Orders() {
     maxPrice: "",
   });
   const [tempFilters, setTempFilters] = useState({ ...filters });
-  const [updateError, setUpdateError] = useState(null);
 
   const uniqueCustomerNames = [
     ...new Set(orders.map((order) => order.customer_name).filter(Boolean)),
@@ -54,8 +48,6 @@ export default function Orders() {
   }, []);
 
   const fetchOrders = () => {
-    setLoading(true);
-    setUpdateError(null);
     fetchLaundryOrders()
       .then((data) => {
         if (!Array.isArray(data)) {
@@ -87,7 +79,6 @@ export default function Orders() {
 
   const handleStatusToggle = async (orderId) => {
     try {
-      setUpdateError(null);
       // Find the order to determine current status
       const order = orders.find((o) => o.id === orderId);
       const newStatus =
@@ -96,11 +87,16 @@ export default function Orders() {
       // Update the order status via API
       await updateOrderStatus(orderId, newStatus);
 
-      // Refresh the orders list to get updated data
-      fetchOrders();
+      // Update local state
+      const updatedOrders = orders.map((order) =>
+        order.id === orderId ? { ...order, order_status: newStatus } : order
+      );
+
+      setOrders(updatedOrders);
+      applyViewModeFilter(viewMode, updatedOrders);
     } catch (err) {
       console.error("Failed to update order status:", err);
-      setUpdateError("Failed to update order status. Please try again.");
+      alert("Failed to update order status. Please try again.");
     }
   };
 
@@ -204,27 +200,6 @@ export default function Orders() {
     applyViewModeFilter(mode);
   };
 
-  // Debug functions
-  const handleDebugOrder = async (orderId) => {
-    const data = await debugOrder(orderId);
-    if (data) {
-      alert(
-        `Order ${orderId} ACF fields: ${JSON.stringify(data.acf, null, 2)}`
-      );
-    } else {
-      alert(`Failed to debug order ${orderId}`);
-    }
-  };
-
-  const handleTestUpdate = async () => {
-    const success = await testOrderUpdate();
-    alert(
-      success
-        ? "Update test passed!"
-        : "Update test failed. Check console for details."
-    );
-  };
-
   return (
     <Card title="Today's Orders">
       {loading ? (
@@ -235,54 +210,6 @@ export default function Orders() {
         </p>
       ) : (
         <>
-          {/* Debug buttons - you can remove these after testing */}
-          <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem" }}>
-            <button
-              onClick={handleTestUpdate}
-              style={{
-                padding: "0.5rem 1rem",
-                backgroundColor: "#3b82f6",
-                color: "white",
-                border: "none",
-                borderRadius: "0.375rem",
-                fontSize: "0.875rem",
-                cursor: "pointer",
-              }}
-            >
-              Test Update
-            </button>
-            <button
-              onClick={() => handleDebugOrder(orders[0]?.id)}
-              style={{
-                padding: "0.5rem 1rem",
-                backgroundColor: "#8b5cf6",
-                color: "white",
-                border: "none",
-                borderRadius: "0.375rem",
-                fontSize: "0.875rem",
-                cursor: "pointer",
-              }}
-            >
-              Debug First Order
-            </button>
-          </div>
-
-          {/* Error message */}
-          {updateError && (
-            <div
-              style={{
-                padding: "1rem",
-                backgroundColor: "#fee2e2",
-                color: "#b91c1c",
-                border: "1px solid #fecaca",
-                borderRadius: "0.375rem",
-                marginBottom: "1rem",
-              }}
-            >
-              {updateError}
-            </div>
-          )}
-
           {/* Filter Controls */}
           <div
             style={{
@@ -686,7 +613,6 @@ export default function Orders() {
                             alignItems: "center",
                             justifyContent: "center",
                             fontSize: "16px",
-                            marginRight: "8px",
                           }}
                           title={
                             order.order_status === "completed"
@@ -696,27 +622,11 @@ export default function Orders() {
                         >
                           {order.order_status === "completed" ? "✓" : "?"}
                         </button>
-                        <span>
+                        <span style={{ marginLeft: "8px" }}>
                           {order.order_status === "completed"
                             ? "Completed"
                             : "Pending"}
                         </span>
-                        <button
-                          onClick={() => handleDebugOrder(order.id)}
-                          style={{
-                            marginLeft: "8px",
-                            padding: "2px 6px",
-                            backgroundColor: "#d1d5db",
-                            color: "black",
-                            border: "none",
-                            borderRadius: "4px",
-                            fontSize: "12px",
-                            cursor: "pointer",
-                          }}
-                          title="Debug this order"
-                        >
-                          Debug
-                        </button>
                       </td>
                     </tr>
                   ))}

@@ -129,8 +129,9 @@ export async function fetchLaundryOrders() {
           pickup_method: acf.pickup_method || "—",
           payment_confirmed: acf.payment_confirmed || false,
           total_price: acf.total_price || "0.00",
+          // ✅ FIX: Changed from acf.special_instructions to acf.Special_Instructions
           special_instructions: acf.Special_Instructions || "—",
-          order_status: acf.order_status || "pending", // This is the new field
+          order_status: acf.order_status || "pending", // Added order_status field
 
           // Enriched/Resolved fields
           camp_name: campName, // Use the fetched name instead of the ID
@@ -160,9 +161,7 @@ export async function updateOrderStatus(orderId, status) {
   }
 
   try {
-    console.log(`Updating order ${orderId} to status: ${status}`);
-
-    // Try the most common WordPress REST API approach first
+    // For WordPress, we need to use the custom endpoint or ACF update
     const response = await fetch(`${API_BASE}/laundry_order/${orderId}`, {
       method: "POST",
       headers: {
@@ -176,139 +175,51 @@ export async function updateOrderStatus(orderId, status) {
       }),
     });
 
-    const responseText = await response.text();
-    console.log("Raw response:", responseText);
-
     if (!response.ok) {
-      console.error("Server responded with error status:", response.status);
-
-      // Try alternative approach if the first one fails
-      return await updateOrderStatusAlternative(orderId, status, token);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    try {
-      const updatedOrder = JSON.parse(responseText);
-      console.log("Order status updated successfully:", updatedOrder);
-      return updatedOrder;
-    } catch (parseError) {
-      console.error("Error parsing response:", parseError);
-      // Even if we can't parse the response, if status is OK, consider it a success
-      return { id: orderId, order_status: status, success: true };
-    }
+    const updatedOrder = await response.json();
+    return updatedOrder;
   } catch (error) {
-    console.error("Error in primary update method:", error);
-
-    // Try the alternative method as fallback
-    try {
-      return await updateOrderStatusAlternative(orderId, status, token);
-    } catch (fallbackError) {
-      console.error("All update methods failed:", fallbackError);
-      throw new Error(
-        `Failed to update order status: ${fallbackError.message}`
-      );
-    }
-  }
-}
-
-/**
- * Alternative method for updating order status
- */
-async function updateOrderStatusAlternative(orderId, status, token) {
-  try {
-    console.log("Trying alternative update method...");
-
-    // Method 2: Try using the standard REST API approach
-    const response = await fetch(`${API_BASE}/laundry_order/${orderId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        order_status: status,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Alternative method failed:", errorText);
-      throw new Error(`Alternative method failed: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log(
-      "Order status updated successfully via alternative method:",
-      result
-    );
-    return result;
-  } catch (error) {
-    console.error("Error in alternative update method:", error);
+    console.error("Error updating order status:", error);
     throw error;
   }
 }
 
-/**
- * Debug function to check order data and ACF fields
- */
-export async function debugOrder(orderId) {
+// Alternative implementation using WordPress REST API custom endpoint
+// Uncomment if you have a custom endpoint for updating order status
+
+/*
+export async function updateOrderStatus(orderId, status) {
   const token = getToken();
   if (!token) {
-    console.error("No token available for debug");
-    return null;
+    throw new Error("Authentication token missing");
   }
 
   try {
-    const response = await fetch(`${API_BASE}/laundry_order/${orderId}`, {
+    // Using a custom endpoint for updating order status
+    const response = await fetch(`${API_BASE}/update_order_status`, {
+      method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
+      body: JSON.stringify({
+        order_id: orderId,
+        order_status: status
+      }),
     });
 
     if (!response.ok) {
-      console.error(`Debug failed: ${response.status}`);
-      return null;
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const orderData = await response.json();
-    console.log("Full order data:", orderData);
-    console.log("ACF fields:", orderData.acf);
-    console.log(
-      "Order status field exists:",
-      orderData.acf?.order_status !== undefined
-    );
-
-    return orderData;
+    const result = await response.json();
+    return result;
   } catch (error) {
-    console.error("Debug error:", error);
-    return null;
+    console.error('Error updating order status:', error);
+    throw error;
   }
 }
-
-/**
- * Test function to check if we can update orders
- */
-export async function testOrderUpdate() {
-  try {
-    // First, get some orders to test with
-    const orders = await fetchLaundryOrders();
-    if (orders.length === 0) {
-      console.error("No orders found to test with");
-      return false;
-    }
-
-    const testOrder = orders[0];
-    console.log("Testing update with order:", testOrder.id);
-
-    // Try to update the order
-    const result = await updateOrderStatus(
-      testOrder.id,
-      testOrder.order_status === "completed" ? "pending" : "completed"
-    );
-
-    console.log("Update test result:", result);
-    return true;
-  } catch (error) {
-    console.error("Update test failed:", error);
-    return false;
-  }
-}
+*/
