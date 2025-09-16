@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import Card from "../components/Card";
-import { fetchLaundryOrders } from "../api/bookings";
+import {
+  fetchLaundryOrders,
+  updateOrderStatus,
+  debugOrder,
+  testOrderUpdate,
+} from "../api/bookings";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -8,6 +13,7 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState("all"); // "all", "completed", "pending"
   const [filters, setFilters] = useState({
     customerName: "all",
     campName: "all",
@@ -19,6 +25,7 @@ export default function Orders() {
     maxPrice: "",
   });
   const [tempFilters, setTempFilters] = useState({ ...filters });
+  const [updateError, setUpdateError] = useState(null);
 
   const uniqueCustomerNames = [
     ...new Set(orders.map((order) => order.customer_name).filter(Boolean)),
@@ -43,13 +50,19 @@ export default function Orders() {
   ];
 
   useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = () => {
+    setLoading(true);
+    setUpdateError(null);
     fetchLaundryOrders()
       .then((data) => {
         if (!Array.isArray(data)) {
           setError(true);
         } else {
           setOrders(data);
-          setFilteredOrders(data);
+          applyViewModeFilter(viewMode, data);
         }
         setLoading(false);
       })
@@ -58,7 +71,38 @@ export default function Orders() {
         setError(true);
         setLoading(false);
       });
-  }, []);
+  };
+
+  const applyViewModeFilter = (mode, ordersList = orders) => {
+    let result = ordersList;
+
+    if (mode === "completed") {
+      result = result.filter((order) => order.order_status === "completed");
+    } else if (mode === "pending") {
+      result = result.filter((order) => order.order_status !== "completed");
+    }
+
+    setFilteredOrders(result);
+  };
+
+  const handleStatusToggle = async (orderId) => {
+    try {
+      setUpdateError(null);
+      // Find the order to determine current status
+      const order = orders.find((o) => o.id === orderId);
+      const newStatus =
+        order.order_status === "completed" ? "pending" : "completed";
+
+      // Update the order status via API
+      await updateOrderStatus(orderId, newStatus);
+
+      // Refresh the orders list to get updated data
+      fetchOrders();
+    } catch (err) {
+      console.error("Failed to update order status:", err);
+      setUpdateError("Failed to update order status. Please try again.");
+    }
+  };
 
   const applyFilters = () => {
     let result = orders;
@@ -112,6 +156,15 @@ export default function Orders() {
       );
     }
 
+    // Apply view mode filter after other filters
+    if (viewMode !== "all") {
+      if (viewMode === "completed") {
+        result = result.filter((order) => order.order_status === "completed");
+      } else if (viewMode === "pending") {
+        result = result.filter((order) => order.order_status !== "completed");
+      }
+    }
+
     setFilteredOrders(result);
     setFilters({ ...tempFilters });
   };
@@ -137,7 +190,39 @@ export default function Orders() {
     };
     setTempFilters(resetValues);
     setFilters(resetValues);
-    setFilteredOrders(orders);
+    applyViewModeFilter(viewMode, orders);
+  };
+
+  const clearAllFilters = () => {
+    resetFilters();
+    setViewMode("all");
+    setShowFilters(false);
+  };
+
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    applyViewModeFilter(mode);
+  };
+
+  // Debug functions
+  const handleDebugOrder = async (orderId) => {
+    const data = await debugOrder(orderId);
+    if (data) {
+      alert(
+        `Order ${orderId} ACF fields: ${JSON.stringify(data.acf, null, 2)}`
+      );
+    } else {
+      alert(`Failed to debug order ${orderId}`);
+    }
+  };
+
+  const handleTestUpdate = async () => {
+    const success = await testOrderUpdate();
+    alert(
+      success
+        ? "Update test passed!"
+        : "Update test failed. Check console for details."
+    );
   };
 
   return (
@@ -150,22 +235,141 @@ export default function Orders() {
         </p>
       ) : (
         <>
-          {/* Toggle Button */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
+          {/* Debug buttons - you can remove these after testing */}
+          <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem" }}>
+            <button
+              onClick={handleTestUpdate}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: "0.375rem",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+              }}
+            >
+              Test Update
+            </button>
+            <button
+              onClick={() => handleDebugOrder(orders[0]?.id)}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: "#8b5cf6",
+                color: "white",
+                border: "none",
+                borderRadius: "0.375rem",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+              }}
+            >
+              Debug First Order
+            </button>
+          </div>
+
+          {/* Error message */}
+          {updateError && (
+            <div
+              style={{
+                padding: "1rem",
+                backgroundColor: "#fee2e2",
+                color: "#b91c1c",
+                border: "1px solid #fecaca",
+                borderRadius: "0.375rem",
+                marginBottom: "1rem",
+              }}
+            >
+              {updateError}
+            </div>
+          )}
+
+          {/* Filter Controls */}
+          <div
             style={{
-              padding: "0.5rem 1rem",
-              backgroundColor: "White",
-              color: "black",
-              border: "none",
-              borderRadius: "0.375rem",
-              fontSize: "0.875rem",
-              cursor: "pointer",
+              display: "flex",
+              gap: "0.5rem",
               marginBottom: "1rem",
+              flexWrap: "wrap",
             }}
           >
-            {showFilters ? "Hide Filters" : "Show Filters"}
-          </button>
+            {/* Toggle Button */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: "White",
+                color: "black",
+                border: "none",
+                borderRadius: "0.375rem",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+              }}
+            >
+              {showFilters ? "Hide Filters" : "Show Filters"}
+            </button>
+
+            {/* View Mode Buttons */}
+            <button
+              onClick={() => handleViewModeChange("all")}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: viewMode === "all" ? "#3b82f6" : "White",
+                color: "black",
+                border: "none",
+                borderRadius: "0.375rem",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+              }}
+            >
+              All Orders
+            </button>
+
+            <button
+              onClick={() => handleViewModeChange("pending")}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: viewMode === "pending" ? "#f59e0b" : "White",
+                color: "black",
+                border: "none",
+                borderRadius: "0.375rem",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+              }}
+            >
+              Pending Orders
+            </button>
+
+            <button
+              onClick={() => handleViewModeChange("completed")}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: viewMode === "completed" ? "#10b981" : "White",
+                color: "black",
+                border: "none",
+                borderRadius: "0.375rem",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+              }}
+            >
+              Completed Orders
+            </button>
+
+            {/* Clear All Filters Button */}
+            <button
+              onClick={clearAllFilters}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: "#ef4444",
+                color: "white",
+                border: "none",
+                borderRadius: "0.375rem",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+              }}
+            >
+              Clear All Filters
+            </button>
+          </div>
 
           {/* Filter Section */}
           {showFilters && (
@@ -385,7 +589,7 @@ export default function Orders() {
                     style={{
                       padding: "0.5rem 1rem",
                       backgroundColor: "#3b82f6",
-                      color: "black",
+                      color: "white",
                       border: "none",
                       borderRadius: "0.375rem",
                     }}
@@ -397,7 +601,7 @@ export default function Orders() {
                     style={{
                       padding: "0.5rem 1rem",
                       backgroundColor: "#6b7280",
-                      color: "black",
+                      color: "white",
                       border: "none",
                       borderRadius: "0.375rem",
                     }}
@@ -430,11 +634,9 @@ export default function Orders() {
                     <th>Pickup</th>
                     <th>Pickup Slot</th>
                     <th>Instructions</th>
-                    <th>Payment Status</th>
+                    <th>Order Status</th>
                   </tr>
                 </thead>
-                {/* / ***** START OF CHANGES ***** /
-                 */}
                 <tbody>
                   {filteredOrders.map((order, index) => (
                     <tr key={order.id}>
@@ -466,24 +668,59 @@ export default function Orders() {
                       <td data-label="Instructions">
                         {order.special_instructions || "—"}
                       </td>
-                      <td data-label="Payment Status">
-                        <span
-                          className={`status ${
-                            order.payment_confirmed
-                              ? "status-confirmed"
-                              : "status-unconfirmed"
-                          }`}
+                      <td data-label="Order Status">
+                        <button
+                          onClick={() => handleStatusToggle(order.id)}
+                          style={{
+                            backgroundColor:
+                              order.order_status === "completed"
+                                ? "#10b981"
+                                : "#f59e0b",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "50%",
+                            width: "30px",
+                            height: "30px",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "16px",
+                            marginRight: "8px",
+                          }}
+                          title={
+                            order.order_status === "completed"
+                              ? "Mark as pending"
+                              : "Mark as completed"
+                          }
                         >
-                          {order.payment_confirmed
-                            ? "Confirmed"
-                            : "Unconfirmed"}
+                          {order.order_status === "completed" ? "✓" : "?"}
+                        </button>
+                        <span>
+                          {order.order_status === "completed"
+                            ? "Completed"
+                            : "Pending"}
                         </span>
+                        <button
+                          onClick={() => handleDebugOrder(order.id)}
+                          style={{
+                            marginLeft: "8px",
+                            padding: "2px 6px",
+                            backgroundColor: "#d1d5db",
+                            color: "black",
+                            border: "none",
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                            cursor: "pointer",
+                          }}
+                          title="Debug this order"
+                        >
+                          Debug
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
-                {/* / ***** END OF CHANGES ***** /
-                 */}
               </table>
             </div>
           )}

@@ -69,7 +69,7 @@ export default function Camps() {
             value={newCampName}
             onChange={(e) => setNewCampName(e.target.value)}
             placeholder="Enter camp name"
-            className="text-black text-center"
+            className="form-input text-black text-center"
           />
           <button type="submit" className="btn-add">
             Add Camp
