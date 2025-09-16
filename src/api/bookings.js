@@ -162,7 +162,7 @@ export async function updateOrderStatus(orderId, status) {
   }
 
   try {
-    // For WordPress, we need to use the custom endpoint or ACF update
+    // Standard WordPress REST API approach - use POST method
     const response = await fetch(`${API_BASE}/laundry_order/${orderId}`, {
       method: "POST",
       headers: {
@@ -177,7 +177,28 @@ export async function updateOrderStatus(orderId, status) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // If POST fails, try PUT method
+      const putResponse = await fetch(`${API_BASE}/laundry_order/${orderId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          acf: {
+            order_status: status,
+          },
+        }),
+      });
+
+      if (!putResponse.ok) {
+        const errorData = await putResponse.json().catch(() => ({}));
+        console.error("Update failed:", putResponse.status, errorData);
+        throw new Error(`HTTP error! status: ${putResponse.status}`);
+      }
+
+      const updatedOrder = await putResponse.json();
+      return updatedOrder;
     }
 
     const updatedOrder = await response.json();
@@ -187,7 +208,6 @@ export async function updateOrderStatus(orderId, status) {
     throw error;
   }
 }
-
 // Alternative implementation using WordPress REST API custom endpoint
 // Uncomment if you have a custom endpoint for updating order status
 

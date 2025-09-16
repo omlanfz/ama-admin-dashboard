@@ -1,28 +1,48 @@
 import Card from "../components/Card";
-import ToggleSwitch from "../components/ToggleSwitch";
 import { useEffect, useState } from "react";
 import { fetchLaundryOrders } from "../api/bookings";
 
 export default function Dashboard() {
-  const [available, setAvailable] = useState(true);
   const [orders, setOrders] = useState([]);
-  const [revenue, setRevenue] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchLaundryOrders()
       .then((data) => {
         setOrders(data);
-
-        // Calculate total revenue
-        const total = data.reduce((sum, order) => {
-          const price = parseFloat(order.service?.price || 0);
-          return sum + price;
-        }, 0);
-
-        setRevenue(total);
+        setLoading(false);
       })
-      .catch((err) => console.error("Failed to fetch dashboard data:", err));
+      .catch((err) => {
+        console.error("Failed to fetch dashboard data:", err);
+        setLoading(false);
+      });
   }, []);
+
+  const today = new Date().toLocaleDateString();
+
+  const todaysOrders = orders.filter(
+    (order) => new Date(order.order_timestamp).toLocaleDateString() === today
+  );
+  const pendingOrders = orders.filter(
+    (order) => order.order_status !== "completed"
+  );
+  const completedOrdersToday = todaysOrders.filter(
+    (order) => order.order_status === "completed"
+  );
+  const estimatedRevenueToday = completedOrdersToday.reduce((sum, order) => {
+    return sum + parseFloat(order.total_price || 0);
+  }, 0);
+  const activeCustomersToday = [
+    ...new Set(todaysOrders.map((order) => order.customer_name)),
+  ].length;
+
+  if (loading) {
+    return (
+      <Card title="Dashboard Overview">
+        <p>Loading...</p>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -32,11 +52,25 @@ export default function Dashboard() {
 
       <div className="dashboard-grid">
         <Card title="Today's Orders">
-          <p className="dashboard-metric">{orders.length}</p>
+          <p className="dashboard-metric">{todaysOrders.length}</p>
         </Card>
 
-        <Card title="Estimated Revenue">
-          <p className="dashboard-metric">${revenue.toFixed(2)}</p>
+        <Card title="Pending Orders">
+          <p className="dashboard-metric">{pendingOrders.length}</p>
+        </Card>
+
+        <Card title="Completed Orders Today">
+          <p className="dashboard-metric">{completedOrdersToday.length}</p>
+        </Card>
+
+        <Card title="Estimated Revenue (Today)">
+          <p className="dashboard-metric">
+            ${estimatedRevenueToday.toFixed(2)}
+          </p>
+        </Card>
+
+        <Card title="Active Customers Today">
+          <p className="dashboard-metric">{activeCustomersToday}</p>
         </Card>
       </div>
     </>
