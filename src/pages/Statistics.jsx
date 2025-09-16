@@ -95,19 +95,37 @@ export default function Statistics() {
     return order.order_timestamp.includes(monthYearPattern);
   });
 
+  // Count cancelled orders for this month
+  const cancelledOrdersThisMonth = ordersThisMonth.filter(
+    (order) => order.order_status === "cancelled"
+  ).length;
+
   const revenueThisMonth = ordersThisMonth.reduce((sum, order) => {
-    return sum + parseFloat(order.total_price || 0);
+    // Only count revenue from non-cancelled orders
+    if (order.order_status !== "cancelled") {
+      return sum + parseFloat(order.total_price || 0);
+    }
+    return sum;
   }, 0);
 
   const averageOrderValue =
     totalOrders > 0
-      ? orders.reduce(
-          (sum, order) => sum + parseFloat(order.total_price || 0),
-          0
-        ) / totalOrders
+      ? orders.reduce((sum, order) => {
+          // Only include non-cancelled orders in AOV calculation
+          if (order.order_status !== "cancelled") {
+            return sum + parseFloat(order.total_price || 0);
+          }
+          return sum;
+        }, 0) /
+        orders.filter((order) => order.order_status !== "cancelled").length
       : 0;
 
-  const serviceCounts = orders
+  // Only count non-cancelled orders for service popularity
+  const nonCancelledOrders = orders.filter(
+    (order) => order.order_status !== "cancelled"
+  );
+
+  const serviceCounts = nonCancelledOrders
     .flatMap((order) => order.services || [])
     .reduce((acc, service) => {
       if (service && service.name) {
@@ -126,38 +144,38 @@ export default function Statistics() {
 
   const mostPopularServiceCount = serviceCounts[mostPopularService] || 0;
 
+  // Additional statistics
+  const completedOrders = orders.filter(
+    (order) => order.order_status === "completed"
+  ).length;
+  const pendingOrders = orders.filter(
+    (order) =>
+      order.order_status !== "completed" && order.order_status !== "cancelled"
+  ).length;
+  const totalCancelledOrders = orders.filter(
+    (order) => order.order_status === "cancelled"
+  ).length;
+
+  // Total revenue from all non-cancelled orders
+  const totalRevenue = orders.reduce((sum, order) => {
+    if (order.order_status !== "cancelled") {
+      return sum + parseFloat(order.total_price || 0);
+    }
+    return sum;
+  }, 0);
+
   // Debug: Log what's being filtered
   useEffect(() => {
     if (orders.length > 0) {
-      console.log("=== STATISTICS DATE DEBUGGING ===");
-      console.log(
-        "Current month/year:",
-        `${currentMonthFormatted}/${currentYearFormatted}`
-      );
+      console.log("=== STATISTICS DEBUGGING ===");
       console.log("Total orders:", orders.length);
-
-      orders.forEach((order, index) => {
-        const orderDate = parseOrderDate(order.order_timestamp);
-        const isThisMonth = orderDate
-          ? orderDate.getMonth() === currentMonth &&
-            orderDate.getFullYear() === currentYear
-          : order.order_timestamp &&
-            order.order_timestamp.includes(
-              `/${currentMonthFormatted}/${currentYearFormatted}`
-            );
-
-        console.log(
-          `Order ${index}:`,
-          order.order_timestamp,
-          "-> This month?",
-          isThisMonth
-        );
-      });
-
-      console.log("Orders this month:", ordersThisMonth.length);
-      console.log("Revenue this month:", revenueThisMonth);
+      console.log("Completed orders:", completedOrders);
+      console.log("Pending orders:", pendingOrders);
+      console.log("Cancelled orders:", totalCancelledOrders);
+      console.log("Cancelled this month:", cancelledOrdersThisMonth);
+      console.log("Total revenue:", totalRevenue);
     }
-  }, [orders, currentMonthFormatted, currentYearFormatted]);
+  }, [orders]);
 
   if (loading) {
     return (
@@ -171,7 +189,11 @@ export default function Statistics() {
 
   const stats = [
     { label: "Total Orders (All Time)", value: totalOrders },
+    { label: "Completed Orders", value: completedOrders },
+    { label: "Pending Orders", value: pendingOrders },
+    { label: "Cancelled Orders (All Time)", value: totalCancelledOrders },
     { label: "Revenue This Month", value: `$${revenueThisMonth.toFixed(2)}` },
+    { label: "Total Revenue (All Time)", value: `$${totalRevenue.toFixed(2)}` },
     { label: "Orders This Month", value: ordersThisMonth.length },
     {
       label: "Average Order Value (AOV)",
@@ -181,7 +203,7 @@ export default function Statistics() {
       label: "Most Popular Service",
       value: `${mostPopularService} (${mostPopularServiceCount} orders)`,
     },
-    { label: "Cancelled Orders (This Month)", value: 0 },
+    { label: "Cancelled Orders (This Month)", value: cancelledOrdersThisMonth },
   ];
 
   return (

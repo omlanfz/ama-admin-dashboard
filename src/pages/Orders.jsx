@@ -8,7 +8,7 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState("all"); // "all", "completed", "pending"
+  const [viewMode, setViewMode] = useState("all"); // "all", "completed", "pending", "cancelled"
   const [filters, setFilters] = useState({
     customerName: "all",
     campName: "all",
@@ -71,19 +71,20 @@ export default function Orders() {
     if (mode === "completed") {
       result = result.filter((order) => order.order_status === "completed");
     } else if (mode === "pending") {
-      result = result.filter((order) => order.order_status !== "completed");
+      result = result.filter(
+        (order) =>
+          order.order_status !== "completed" &&
+          order.order_status !== "cancelled"
+      );
+    } else if (mode === "cancelled") {
+      result = result.filter((order) => order.order_status === "cancelled");
     }
 
     setFilteredOrders(result);
   };
 
-  const handleStatusToggle = async (orderId) => {
+  const handleStatusToggle = async (orderId, newStatus) => {
     try {
-      // Find the order to determine current status
-      const order = orders.find((o) => o.id === orderId);
-      const newStatus =
-        order.order_status === "completed" ? "pending" : "completed";
-
       // Update local state immediately for better UX
       const updatedOrders = orders.map((order) =>
         order.id === orderId ? { ...order, order_status: newStatus } : order
@@ -111,6 +112,12 @@ export default function Orders() {
     } catch (err) {
       console.error("Failed to update order status:", err);
       alert("Failed to update order status. Please try again.");
+    }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (window.confirm("Are you sure you want to cancel this order?")) {
+      await handleStatusToggle(orderId, "cancelled");
     }
   };
 
@@ -171,7 +178,13 @@ export default function Orders() {
       if (viewMode === "completed") {
         result = result.filter((order) => order.order_status === "completed");
       } else if (viewMode === "pending") {
-        result = result.filter((order) => order.order_status !== "completed");
+        result = result.filter(
+          (order) =>
+            order.order_status !== "completed" &&
+            order.order_status !== "cancelled"
+        );
+      } else if (viewMode === "cancelled") {
+        result = result.filter((order) => order.order_status === "cancelled");
       }
     }
 
@@ -295,12 +308,28 @@ export default function Orders() {
               Completed Orders
             </button>
 
+            {/* Cancelled Orders Button */}
+            <button
+              onClick={() => handleViewModeChange("cancelled")}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: viewMode === "cancelled" ? "#ef4444" : "White",
+                color: "black",
+                border: "none",
+                borderRadius: "0.375rem",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+              }}
+            >
+              Cancelled Orders
+            </button>
+
             {/* Clear All Filters Button */}
             <button
               onClick={clearAllFilters}
               style={{
                 padding: "0.5rem 1rem",
-                backgroundColor: "#ef4444",
+                backgroundColor: "#6b7280",
                 color: "white",
                 border: "none",
                 borderRadius: "0.375rem",
@@ -614,37 +643,79 @@ export default function Orders() {
                         {order.special_instructions || "—"}
                       </td>
                       <td data-label="Order Status">
-                        <button
-                          onClick={() => handleStatusToggle(order.id)}
+                        <div
                           style={{
-                            backgroundColor:
-                              order.order_status === "completed"
-                                ? "#10b981"
-                                : "#f59e0b",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "50%",
-                            width: "30px",
-                            height: "30px",
-                            cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "16px",
+                            gap: "8px",
                           }}
-                          title={
-                            order.order_status === "completed"
-                              ? "Mark as pending"
-                              : "Mark as completed"
-                          }
                         >
-                          {order.order_status === "completed" ? "✓" : "?"}
-                        </button>
-                        <span style={{ marginLeft: "8px" }}>
-                          {order.order_status === "completed"
-                            ? "Completed"
-                            : "Pending"}
-                        </span>
+                          {order.order_status !== "cancelled" && (
+                            <>
+                              <button
+                                onClick={() =>
+                                  handleStatusToggle(
+                                    order.id,
+                                    order.order_status === "completed"
+                                      ? "pending"
+                                      : "completed"
+                                  )
+                                }
+                                style={{
+                                  backgroundColor:
+                                    order.order_status === "completed"
+                                      ? "#10b981"
+                                      : "#f59e0b",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "50%",
+                                  width: "30px",
+                                  height: "30px",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "16px",
+                                }}
+                                title={
+                                  order.order_status === "completed"
+                                    ? "Mark as pending"
+                                    : "Mark as completed"
+                                }
+                              >
+                                {order.order_status === "completed" ? "✓" : "?"}
+                              </button>
+
+                              <button
+                                onClick={() => handleCancelOrder(order.id)}
+                                style={{
+                                  backgroundColor: "#ef4444",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "50%",
+                                  width: "30px",
+                                  height: "30px",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "16px",
+                                }}
+                                title="Cancel order"
+                              >
+                                ✕
+                              </button>
+                            </>
+                          )}
+
+                          <span style={{ marginLeft: "4px" }}>
+                            {order.order_status === "completed"
+                              ? "Completed"
+                              : order.order_status === "cancelled"
+                              ? "Cancelled"
+                              : "Pending"}
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   ))}
