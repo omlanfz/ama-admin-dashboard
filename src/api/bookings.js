@@ -132,6 +132,7 @@ export async function fetchLaundryOrders() {
           // ✅ FIX: Changed from acf.special_instructions to acf.Special_Instructions
           special_instructions: acf.Special_Instructions || "—",
           order_status: acf.order_status || "pending", // Added order_status field
+          order_timestamp: acf.order_timestamp || "—",
 
           // Enriched/Resolved fields
           camp_name: campName, // Use the fetched name instead of the ID
