@@ -553,6 +553,7 @@ export default function Orders() {
                   <tr>
                     <th>#</th>
                     <th>Order ID</th>
+                    <th>Date & Time</th>
                     <th>Customer Name</th>
                     <th>Camp Name</th>
                     <th>Room</th>
@@ -569,6 +570,11 @@ export default function Orders() {
                     <tr key={order.id}>
                       <td data-label="#">{index + 1}</td>
                       <td data-label="Order ID">{order.id}</td>
+                      <td>
+                        {order.acf.order_timestamp
+                          ? new Date(order.acf.order_timestamp).toLocaleString()
+                          : "N/A"}
+                      </td>
                       <td data-label="Customer Name">
                         {order.customer_name || "—"}
                       </td>
