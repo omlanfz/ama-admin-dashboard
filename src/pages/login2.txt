@@ -14,21 +14,8 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      // Temporarily bypass authentication - allow anyone to login
-      // Create a mock user object with default values
-      const mockUser = {
-        id: 1,
-        username: username || "guest",
-        role: "admin",
-        token: "bypassed-token-" + Date.now(),
-      };
-
-      // Use the mock user instead of calling the API
-      onLogin(mockUser);
-
-      // Original authentication code (commented out for temporary bypass):
-      // const user = await loginAdmin(username, password);
-      // onLogin(user);
+      const user = await loginAdmin(username, password);
+      onLogin(user);
     } catch (err) {
       setError(err.message || "Login failed. Try again.");
     } finally {
@@ -45,12 +32,6 @@ export default function Login({ onLogin }) {
       <div className="text-center">
         <h1 className="header-title">Admin Dashboard</h1>
         <p className="header-subtitle">Manage laundry booking services.</p>
-        {/* Added temporary notice about disabled authentication */}
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 mt-4 rounded">
-          <p className="text-sm">
-            Authentication is temporarily disabled. Any credentials will work.
-          </p>
-        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="card login-form">
@@ -59,7 +40,7 @@ export default function Login({ onLogin }) {
         <div className="space-y-4">
           <input
             type="text"
-            placeholder="Username (any value accepted)"
+            placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="form-input"
@@ -68,7 +49,7 @@ export default function Login({ onLogin }) {
 
           <input
             type="password"
-            placeholder="Password (any value accepted)"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="form-input"
@@ -85,7 +66,7 @@ export default function Login({ onLogin }) {
           className="btn-add w-full mt-6"
           disabled={loading}
         >
-          {loading ? "Logging in..." : "Login (No Auth)"}
+          {loading ? "Logging in..." : "Login"}
         </button>
       </form>
     </div>
