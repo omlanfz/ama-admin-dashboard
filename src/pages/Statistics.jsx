@@ -88,7 +88,7 @@ export default function Statistics() {
   ];
 
   return (
-    <div className="statistics-grid">
+    <div className="dashboard-grid">
       {stats.map((stat, index) => (
         <Card key={index} title={stat.label}>
           <p className="statistics-metric">{stat.value}</p>

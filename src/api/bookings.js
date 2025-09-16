@@ -162,47 +162,27 @@ export async function updateOrderStatus(orderId, status) {
   }
 
   try {
-    // Standard WordPress REST API approach - use POST method
-    const response = await fetch(`${API_BASE}/laundry_order/${orderId}`, {
+    // Use a custom endpoint for updating order status
+    const response = await fetch(`${API_BASE}/update_order_status`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        acf: {
-          order_status: status,
-        },
+        order_id: orderId,
+        order_status: status,
       }),
     });
 
     if (!response.ok) {
-      // If POST fails, try PUT method
-      const putResponse = await fetch(`${API_BASE}/laundry_order/${orderId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          acf: {
-            order_status: status,
-          },
-        }),
-      });
-
-      if (!putResponse.ok) {
-        const errorData = await putResponse.json().catch(() => ({}));
-        console.error("Update failed:", putResponse.status, errorData);
-        throw new Error(`HTTP error! status: ${putResponse.status}`);
-      }
-
-      const updatedOrder = await putResponse.json();
-      return updatedOrder;
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Update failed:", response.status, errorData);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const updatedOrder = await response.json();
-    return updatedOrder;
+    const result = await response.json();
+    return result;
   } catch (error) {
     console.error("Error updating order status:", error);
     throw error;

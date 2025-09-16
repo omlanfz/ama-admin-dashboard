@@ -84,16 +84,30 @@ export default function Orders() {
       const newStatus =
         order.order_status === "completed" ? "pending" : "completed";
 
-      // Update the order status via API
-      await updateOrderStatus(orderId, newStatus);
-
-      // Update local state
+      // Update local state immediately for better UX
       const updatedOrders = orders.map((order) =>
         order.id === orderId ? { ...order, order_status: newStatus } : order
       );
 
       setOrders(updatedOrders);
       applyViewModeFilter(viewMode, updatedOrders);
+
+      // Try to update via API in the background
+      try {
+        await updateOrderStatus(orderId, newStatus);
+        console.log("Order status updated successfully on server");
+      } catch (apiError) {
+        console.warn("API update failed:", apiError);
+        // Revert the UI change if API fails
+        const revertedOrders = orders.map((order) =>
+          order.id === orderId
+            ? { ...order, order_status: order.order_status }
+            : order
+        );
+        setOrders(revertedOrders);
+        applyViewModeFilter(viewMode, revertedOrders);
+        alert("Failed to update order status. Please try again.");
+      }
     } catch (err) {
       console.error("Failed to update order status:", err);
       alert("Failed to update order status. Please try again.");
