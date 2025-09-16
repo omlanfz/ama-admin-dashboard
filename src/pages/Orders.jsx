@@ -433,15 +433,19 @@ export default function Orders() {
                     <th>Payment Status</th>
                   </tr>
                 </thead>
+                {/* / ***** START OF CHANGES ***** /
+                 */}
                 <tbody>
                   {filteredOrders.map((order, index) => (
                     <tr key={order.id}>
-                      <td>{index + 1}</td>
-                      <td>{order.id}</td>
-                      <td>{order.customer_name || "—"}</td>
-                      <td>{order.camp_name || "—"}</td>
-                      <td>{order.room_number}</td>
-                      <td>
+                      <td data-label="#">{index + 1}</td>
+                      <td data-label="Order ID">{order.id}</td>
+                      <td data-label="Customer Name">
+                        {order.customer_name || "—"}
+                      </td>
+                      <td data-label="Camp Name">{order.camp_name || "—"}</td>
+                      <td data-label="Room">{order.room_number}</td>
+                      <td data-label="Service">
                         {order.services?.length > 0 ? (
                           <ol>
                             {order.services.map((service) => (
@@ -452,13 +456,17 @@ export default function Orders() {
                           "—"
                         )}
                       </td>
-                      <td>
+                      <td data-label="Total Price">
                         ${parseFloat(order.total_price || 0).toFixed(2)} AUD
                       </td>
-                      <td>{order.pickup_method}</td>
-                      <td>{order.pickup_slot?.acf?.time || "—"}</td>
-                      <td>{order.special_instructions || "—"}</td>
-                      <td>
+                      <td data-label="Pickup">{order.pickup_method}</td>
+                      <td data-label="Pickup Slot">
+                        {order.pickup_slot?.acf?.time || "—"}
+                      </td>
+                      <td data-label="Instructions">
+                        {order.special_instructions || "—"}
+                      </td>
+                      <td data-label="Payment Status">
                         <span
                           className={`status ${
                             order.payment_confirmed
@@ -474,6 +482,8 @@ export default function Orders() {
                     </tr>
                   ))}
                 </tbody>
+                {/* / ***** END OF CHANGES ***** /
+                 */}
               </table>
             </div>
           )}

@@ -114,8 +114,8 @@ h1 {
 
 /* === Card Panel === */
 .card {
-  @apply border border-white rounded-2xl p-8 mb-7 shadow-white shadow-2xl transition-transform duration-200 ease-in-out overflow-x-auto;
-  background-color: rgba(255, 255, 255, 0.3);
+  @apply border border-white rounded-2xl p-8 mb-7 shadow-white shadow-2xl transition-transform duration-200 ease-in-out;
+  background-color: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(60px);
 }
 
@@ -127,6 +127,8 @@ h1 {
   @apply text-xl font-bold mb-4  border-b border-white/10 pb-2;
 }
 
+/* / ***** START OF CHANGES: Table Styling ***** / */
+
 /* === Table Styling === */
 table {
   @apply w-full border-collapse mt-4 text-sm text-black;
@@ -134,14 +136,17 @@ table {
 
 th,
 td {
-  @apply p-3 text-left border-b border-white/10 whitespace-nowrap;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  /* This single line applies a visible border to ALL sides of every cell */
+  @apply p-3 text-left border border-white;
 }
 
-th:last-child,
+/* This rule is no longer needed */
+/* th:last-child,
 td:last-child {
   border-right: none;
-}
+} */
+
+/* / ***** END OF CHANGES ***** / */
 
 th {
   @apply font-bold uppercase text-xs text-black;
@@ -347,9 +352,15 @@ input::placeholder {
 }
 
 /* === Responsive Fixes === */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
+  /* Breakpoint for smaller laptops and tablets like Surface Pro */
   table {
-    @apply text-xs;
+    @apply text-xs; /* Slightly reduce font size */
+  }
+
+  th,
+  td {
+    @apply p-2; /* Reduce padding */
   }
 
   .card {
@@ -362,6 +373,7 @@ input::placeholder {
 }
 
 @media (max-width: 768px) {
+  /* Breakpoint for mobile devices */
   .nav-bar {
     @apply flex-col gap-4 p-5;
   }
@@ -372,19 +384,22 @@ input::placeholder {
     @apply w-full;
   }
   .orders-table-container thead {
-    @apply hidden;
+    @apply hidden; /* Hide the table header */
   }
   .orders-table-container tr {
+    /* Display each row as a block (card) */
     @apply block mb-5  bg-white/5 border-white border-2 rounded-lg overflow-hidden;
     backdrop-filter: blur(60px);
   }
   .orders-table-container td {
+    /* Display each cell as a block with a label */
     @apply block text-right pl-[50%] relative border-b border-white/50  text-pretty;
   }
   .orders-table-container td:last-child {
     @apply border-b-0;
   }
   .orders-table-container td::before {
+    /* Use the data-label attribute as the label */
     content: attr(data-label);
     @apply absolute left-4 font-bold uppercase text-xs;
   }
