@@ -1,5 +1,6 @@
 // src/api/auth.js
 
+
 const API_URL = "https://amalaundry.com.au/wp-json/jwt-auth/v1/token";
 const BASE_API_URL = "https://amalaundry.com.au/wp-json/wp/v2";
 
