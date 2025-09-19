@@ -61,7 +61,12 @@ export async function fetchLaundryOrders() {
       }));
 
     const slot = pickupSlotsMap.get(acf.slot_id);
-    const campName = campsMap.get(acf.camp_name) || "—";
+
+    // FIX: Handle camp_name being a single ID or an array of IDs
+    const campId = Array.isArray(acf.camp_name)
+      ? acf.camp_name[0]
+      : acf.camp_name;
+    const campName = campsMap.get(campId) || "—";
 
     return {
       id: order.id,
